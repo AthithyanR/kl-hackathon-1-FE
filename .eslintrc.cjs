@@ -20,5 +20,6 @@ module.exports = {
   rules: {
     'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
     'linebreak-style': 0,
+    'react/prop-types': 'off',
   },
 };
