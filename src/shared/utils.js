@@ -1,5 +1,5 @@
 export function getFromLs(key) {
-  return localStorage.getItem(key);
+  return JSON.parse(localStorage.getItem(key));
 }
 
 export function setToLs(key, value) {
