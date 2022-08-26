@@ -11,13 +11,13 @@ import { MantineProvider } from '@mantine/core';
 import { NotificationsProvider } from '@mantine/notifications';
 
 import Login from './components/login';
-import AdminHome from './components/admin/home';
-import InterviewHome from './components/interview/home';
-import Quiz from './components/interview/quiz';
 
 import './App.scss';
 import { getFromLs } from './shared/utils';
 import NotFound from './components/not-found';
+import Main from './components/main';
+import Questions from './components/questions';
+import InterviewHome from './components/interview';
 
 const queryClient = new QueryClient();
 
@@ -50,10 +50,11 @@ function App() {
                 <Route path="/login" element={<Login />} />
               </Route>
               <Route element={<ProtectedRoute />}>
-                <Route path="/" element={<AdminHome />} />
+                <Route path="/" element={<Main />}>
+                  <Route path="/questions" element={<Questions />} />
+                </Route>
               </Route>
               <Route path="/interview" element={<InterviewHome />} />
-              <Route path="/quiz" element={<Quiz />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

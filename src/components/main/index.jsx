@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/anchor-is-valid */
 import React, { useState } from 'react';
 import {
   createStyles, Navbar, Group,
@@ -7,11 +8,12 @@ import {
   IconFingerprint,
   IconKey,
   IconSettings,
-  IconReceipt2,
   IconSwitchHorizontal,
   IconLogout,
+  IconQuestionMark,
 } from '@tabler/icons';
 import { MantineLogo } from '@mantine/ds';
+import { Outlet } from 'react-router-dom';
 
 const useStyles = createStyles((theme, _params, getRef) => {
   const icon = getRef('icon');
@@ -74,13 +76,13 @@ const useStyles = createStyles((theme, _params, getRef) => {
 
 const data = [
   { link: '', label: 'Dashboard', icon: IconBellRinging },
-  { link: '', label: 'Quiz', icon: IconReceipt2 },
+  { link: '', label: 'Questions', icon: IconQuestionMark },
   { link: '', label: 'Reports', icon: IconKey },
   { link: '', label: 'User', icon: IconFingerprint },
   { link: '', label: 'Settings', icon: IconSettings },
 ];
 
-function NavbarSimple() {
+function Main() {
   const { classes, cx } = useStyles();
   const [active, setActive] = useState('Billing');
 
@@ -100,26 +102,29 @@ function NavbarSimple() {
   ));
 
   return (
-    <Navbar height={700} width={{ sm: 300 }} p="md">
-      <Navbar.Section grow>
-        <Group className={classes.header} position="apart">
-          <MantineLogo size={28} />
-        </Group>
-        {links}
-      </Navbar.Section>
-      <Navbar.Section className={classes.footer}>
-        <a href="#" className={classes.link} onClick={(event) => event.preventDefault()}>
-          <IconSwitchHorizontal className={classes.linkIcon} stroke={1.5} />
-          <span>Change account</span>
-        </a>
+    <>
+      <Navbar height={700} width={{ sm: 300 }} p="md">
+        <Navbar.Section grow>
+          <Group className={classes.header} position="apart">
+            <MantineLogo size={28} />
+          </Group>
+          {links}
+        </Navbar.Section>
+        <Navbar.Section className={classes.footer}>
+          <a href="#" className={classes.link} onClick={(event) => event.preventDefault()}>
+            <IconSwitchHorizontal className={classes.linkIcon} stroke={1.5} />
+            <span>Change account</span>
+          </a>
 
-        <a href="#" className={classes.link} onClick={(event) => event.preventDefault()}>
-          <IconLogout className={classes.linkIcon} stroke={1.5} />
-          <span>Logout</span>
-        </a>
-      </Navbar.Section>
-    </Navbar>
+          <a href="#" className={classes.link} onClick={(event) => event.preventDefault()}>
+            <IconLogout className={classes.linkIcon} stroke={1.5} />
+            <span>Logout</span>
+          </a>
+        </Navbar.Section>
+      </Navbar>
+      <Outlet />
+    </>
   );
 }
 
-export default NavbarSimple;
+export default Main;
