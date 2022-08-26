@@ -13,6 +13,7 @@ import { NotificationsProvider } from '@mantine/notifications';
 import Login from './components/login';
 import AdminHome from './components/admin/home';
 import InterviewHome from './components/interview/home';
+import Quiz from './components/interview/quiz';
 
 import './App.scss';
 import { getFromLs } from './shared/utils';
@@ -52,6 +53,7 @@ function App() {
                 <Route path="/" element={<AdminHome />} />
               </Route>
               <Route path="/interview" element={<InterviewHome />} />
+              <Route path="/quiz" element={<Quiz />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
