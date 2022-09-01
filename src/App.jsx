@@ -12,12 +12,12 @@ import { NotificationsProvider } from '@mantine/notifications';
 
 import Login from './components/login';
 
-import './App.scss';
+import './app.scss';
 import { getFromLs } from './shared/utils';
 import NotFound from './components/not-found';
 import Main from './components/main';
 import Questions from './components/questions';
-import InterviewHome from './components/interview';
+import ScheduleInterview from './components/schedule-interview';
 
 const queryClient = new QueryClient();
 
@@ -52,9 +52,9 @@ function App() {
               <Route element={<ProtectedRoute />}>
                 <Route path="/" element={<Main />}>
                   <Route path="/questions" element={<Questions />} />
+                  <Route path="/schedule-interview" element={<ScheduleInterview />} />
                 </Route>
               </Route>
-              <Route path="/interview" element={<InterviewHome />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
