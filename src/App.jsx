@@ -18,7 +18,7 @@ import Main from './components/main';
 import ScheduleInterview from './components/schedule-interview';
 import TechTypes from './components/settings/techTypes';
 
-import './App.scss';
+import './styles/index.scss';
 
 const queryClient = new QueryClient({
   defaultOptions: {
