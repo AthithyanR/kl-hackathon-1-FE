@@ -9,10 +9,9 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MantineProvider } from '@mantine/core';
 import { NotificationsProvider } from '@mantine/notifications';
-
 import Login from './components/login';
+import './styles/index.scss';
 
-import './app.scss';
 import { getFromLs } from './shared/utils';
 import NotFound from './components/not-found';
 import Main from './components/main';

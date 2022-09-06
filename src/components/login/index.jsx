@@ -26,6 +26,7 @@ export default function AuthenticationTitle() {
         navigate('/', { replace: true });
       },
       onError: () => {
+        // navigate('/', { replace: true });
         showNotification({
           title: '',
           message: 'Login failed!',
