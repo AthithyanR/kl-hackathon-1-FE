@@ -9,16 +9,26 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MantineProvider } from '@mantine/core';
 import { NotificationsProvider } from '@mantine/notifications';
-import Login from './components/login';
-import './styles/index.scss';
 
 import { getFromLs } from './shared/utils';
+import Login from './components/login';
 import NotFound from './components/not-found';
 import Main from './components/main';
-import Questions from './components/questions';
+// import Questions from './components/questions';
 import ScheduleInterview from './components/schedule-interview';
+import TechTypes from './components/settings/techTypes';
 
-const queryClient = new QueryClient();
+import './App.scss';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+    },
+  },
+});
 
 function ProtectedRoute() {
   const token = getFromLs('token');
@@ -50,7 +60,7 @@ function App() {
               </Route>
               <Route element={<ProtectedRoute />}>
                 <Route path="/" element={<Main />}>
-                  <Route path="/questions" element={<Questions />} />
+                  <Route path="/questions" element={<TechTypes />} />
                   <Route path="/schedule-interview" element={<ScheduleInterview />} />
                 </Route>
               </Route>

@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-props-no-spreading */
 import React from 'react';
 import {
   TextInput,
@@ -19,10 +18,10 @@ import { setToLs } from '../../shared/utils';
 export default function AuthenticationTitle() {
   const navigate = useNavigate();
   const loginMutation = useMutation(
-    (payload) => baseApi.post('/api/authenticate', payload),
+    (payload) => baseApi.post('/authenticate', payload),
     {
-      onSuccess: ({ data: resp }) => {
-        setToLs('token', resp.data);
+      onSuccess: ({ data: token }) => {
+        setToLs('token', token);
         navigate('/', { replace: true });
       },
       onError: () => {

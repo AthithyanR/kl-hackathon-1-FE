@@ -21,5 +21,6 @@ module.exports = {
     'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
     'linebreak-style': 0,
     'react/prop-types': 'off',
+    'react/jsx-props-no-spreading': 'off',
   },
 };
