@@ -2,9 +2,18 @@
 import React, { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  ActionIcon, Box, Button, Card, Grid, LoadingOverlay, Modal, Paper, TextInput, Title,
+  ActionIcon,
+  Box,
+  Button,
+  Card,
+  Grid,
+  LoadingOverlay,
+  Modal,
+  Paper,
+  TextInput,
+  Title,
 } from '@mantine/core';
-import { IconTrash, IconSquarePlus, IconEdit } from '@tabler/icons';
+import { IconTrash, IconPlaylistAdd, IconEdit } from '@tabler/icons';
 
 import { showNotification } from '@mantine/notifications';
 import { useForm } from '@mantine/form';
@@ -20,17 +29,35 @@ function TechType({ techType, handleDelete, handleEdit }) {
         radius="md"
         withBorder
         style={{
-          display: 'flex', justifyContent: 'space-between',
+          display: 'flex',
+          justifyContent: 'space-between',
         }}
       >
-        {
-          techType.imgUrl
-            && <img height={35} width={35} src={techType.imgUrl} alt={`${techType.name}-logo`} />
-        }
+        {techType.imgUrl && (
+          <img
+            height={35}
+            width={35}
+            src={techType.imgUrl}
+            alt={`${techType.name}-logo`}
+          />
+        )}
         <Title order={3}>{techType.name}</Title>
         <Box style={{ display: 'flex' }}>
-          <ActionIcon mt={5} mr={5} onClick={() => handleEdit(techType.id)} variant="light"><IconEdit size={16} /></ActionIcon>
-          <ActionIcon mt={5} onClick={() => handleDelete(techType.id)} variant="light"><IconTrash size={16} /></ActionIcon>
+          <ActionIcon
+            mt={5}
+            mr={5}
+            onClick={() => handleEdit(techType.id)}
+            variant="light"
+          >
+            <IconEdit size={16} />
+          </ActionIcon>
+          <ActionIcon
+            mt={5}
+            onClick={() => handleDelete(techType.id)}
+            variant="light"
+          >
+            <IconTrash size={16} />
+          </ActionIcon>
         </Box>
       </Card>
     </Grid.Col>
@@ -132,42 +159,38 @@ function TechTypes() {
 
   return (
     <>
-      <Paper p={10}>
-        <Grid>
-          <Grid.Col span={6}>
-            <Title order={1} mb={20}>
-              Tech Types
-            </Title>
-          </Grid.Col>
-          <Grid.Col
-            span={6}
-            mt={10}
-            style={{ display: 'flex', justifyContent: 'flex-end' }}
+      <Grid justify="space-between">
+        <Grid.Col span={1}>
+          <Title order={2} mb={4}>
+            Tech Types
+          </Title>
+        </Grid.Col>
+        <Grid.Col span={1}>
+          <ActionIcon
+            onClick={() => setOpened(true)}
+            variant="filled"
+            sx={{ backgroundColor: '#211c57', marginLeft: 'auto' }}
           >
-            <ActionIcon
-              onClick={() => setOpened(true)}
-              variant="light"
-            >
-              <IconSquarePlus size={30} />
-            </ActionIcon>
-          </Grid.Col>
-        </Grid>
-        <Grid>
-          {techTypes.map((t) => (
-            <TechType
-              techType={t}
-              key={t.id}
-              handleEdit={handleEdit}
-              handleDelete={deleteMutation.mutate}
-            />
-          ))}
-        </Grid>
-      </Paper>
-      <Modal
-        opened={opened}
-        onClose={handleModalClose}
-      >
-        <form onSubmit={form.onSubmit(editId ? updateMutation.mutate : addMutation.mutate)}>
+            <IconPlaylistAdd size={24} />
+          </ActionIcon>
+        </Grid.Col>
+      </Grid>
+      <Grid gutter="md">
+        {techTypes.map((t) => (
+          <TechType
+            techType={t}
+            key={t.id}
+            handleEdit={handleEdit}
+            handleDelete={deleteMutation.mutate}
+          />
+        ))}
+      </Grid>
+      <Modal opened={opened} onClose={handleModalClose}>
+        <form
+          onSubmit={form.onSubmit(
+            editId ? updateMutation.mutate : addMutation.mutate,
+          )}
+        >
           <TextInput
             required
             label="Tech name"
@@ -188,7 +211,12 @@ function TechTypes() {
               check this out
             </a>
           </p>
-          <Button fullWidth mt="xl" type="submit" loading={addMutation.isLoading}>
+          <Button
+            fullWidth
+            mt="xl"
+            type="submit"
+            loading={addMutation.isLoading}
+          >
             Add
           </Button>
         </form>
