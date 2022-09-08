@@ -47,7 +47,7 @@ function Questions() {
   const techTypes = techTypesResp.data || [];
 
   return (
-    <div>{JSON.stringify(techTypes)}</div>
+    <>{JSON.stringify(techTypes)}</>
   );
 }
 
