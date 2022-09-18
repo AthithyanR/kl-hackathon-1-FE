@@ -1,0 +1,13 @@
+.schedule-interview-model-content {
+    .card {
+        background-color: #f1f3f5;
+        .option-btn{
+            border-color: '#dee2e6';
+        }
+    }
+    .question{
+        background-color: #f1f3f5;
+        max-height: 300px;
+        overflow-y: scroll;
+    }
+}
