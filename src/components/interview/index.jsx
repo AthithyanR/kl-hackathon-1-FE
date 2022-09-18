@@ -1,24 +1,19 @@
+import React, { useState } from 'react';
 import {
-  ActionIcon, Grid, Modal, Title,
+  ActionIcon, Grid, Paper, Title,
 } from '@mantine/core';
 import { IconPlaylistAdd } from '@tabler/icons';
-import React, { useState } from 'react';
-import UpsertInterview from './upsert-interview';
+import UpsertInterview from './upsert';
 
-function Interview() {
+export default function Interview() {
   const [opened, setOpened] = useState(false);
 
-  const handleModalClose = () => {
-    setOpened(false);
-    // setEditId(null);
-    // form.reset();
-  };
   return (
-    <>
+    <Paper p={10}>
       <Grid justify="space-between">
-        <Grid.Col span={1}>
+        <Grid.Col span={4}>
           <Title order={2} mb={4}>
-            Interviews
+            Interview
           </Title>
         </Grid.Col>
         <Grid.Col span={1}>
@@ -31,11 +26,10 @@ function Interview() {
           </ActionIcon>
         </Grid.Col>
       </Grid>
-      <Modal opened={opened} onClose={handleModalClose}>
-        <UpsertInterview />
-      </Modal>
-    </>
+      <Grid>
+        Table
+        <UpsertInterview opened={opened} setOpened={setOpened} />
+      </Grid>
+    </Paper>
   );
 }
-
-export default Interview;
