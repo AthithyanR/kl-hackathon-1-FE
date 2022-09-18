@@ -3,10 +3,10 @@ import {
 } from '@mantine/core';
 import { IconPlaylistAdd } from '@tabler/icons';
 import React, { useState } from 'react';
-import UpsertInterview from './upsert-interview';
+import UpsertInterview from './upsert';
 
 function Interview() {
-  const [opened, setOpened] = useState(false);
+  const [opened, setOpened] = useState(true);
 
   const handleModalClose = () => {
     setOpened(false);
@@ -31,7 +31,11 @@ function Interview() {
           </ActionIcon>
         </Grid.Col>
       </Grid>
-      <Modal opened={opened} onClose={handleModalClose}>
+      <Modal
+        opened={opened}
+        onClose={handleModalClose}
+        fullScreen
+      >
         <UpsertInterview />
       </Modal>
     </>
