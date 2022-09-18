@@ -15,11 +15,11 @@ import Login from './components/login';
 import NotFound from './components/not-found';
 import Main from './components/main';
 // import Questions from './components/questions';
-import ScheduleInterview from './components/schedule-interview';
+import Interview from './components/interview';
+import Questions from './components/questions';
 import TechTypes from './components/settings/techTypes';
 
 import './styles/index.scss';
-import Demo from './components/allocation';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,9 +61,9 @@ function App() {
               </Route>
               <Route element={<ProtectedRoute />}>
                 <Route path="/" element={<Main />}>
-                  <Route path="/questions" element={<TechTypes />} />
-                  <Route path="/schedule-interview" element={<ScheduleInterview />} />
-                  <Route path="/demo" element={<Demo />} />
+                  <Route path="/interview" element={<Interview />} />
+                  <Route path="/questions" element={<Questions />} />
+                  <Route path="/tech-types" element={<TechTypes />} />
                 </Route>
               </Route>
               <Route path="*" element={<NotFound />} />

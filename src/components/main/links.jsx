@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import {
-  IconAperture,
-  IconFingerprint,
-  IconKey,
-  IconSettings,
-  IconArtboardOff,
-  IconBabyCarriage,
+  IconBuildingSkyscraper,
+  IconZoomQuestion,
+  IconAugmentedReality,
 } from '@tabler/icons';
 import { NavLink } from '@mantine/core';
 import { Link, useLocation } from 'react-router-dom';
@@ -26,51 +23,33 @@ function MainLink({ icon: Icon, link }) {
 
 const data = [
   {
-    icon: IconAperture,
-    color: 'blue',
-    label: 'Dashboard',
-    link: '/dashboard',
+    icon: IconBuildingSkyscraper,
+    // color: 'blue',
+    label: 'Interview',
+    link: '/interview',
   },
   {
-    icon: IconBabyCarriage,
-    color: 'blue',
-    label: 'Schedule Interview',
-    link: '/schedule-interview',
-  },
-  {
-    icon: IconArtboardOff,
-    color: 'teal',
+    icon: IconZoomQuestion,
+    // color: 'teal',
     label: 'Questions',
     link: '/questions',
   },
   {
-    icon: IconKey,
-    color: 'violet',
-    label: 'Reports',
-    link: '/reports',
-  },
-  {
-    icon: IconFingerprint,
-    color: 'grape',
-    label: 'User',
-    link: '/user',
-  },
-  {
-    icon: IconSettings,
-    color: 'grape',
-    label: 'Settings',
-    link: '/settings',
+    icon: IconAugmentedReality,
+    // color: 'grape',
+    label: 'Tech Types',
+    link: '/tech-types',
   },
 ];
 
 function MainLinks() {
-  const [active, setActive] = useState('/schedule-interview');
+  const [active, setActive] = useState('/interview');
   const links = data.map((item) => (
     <MainLink
       active={active}
       setActive={setActive}
       icon={item.icon}
-      color={item.color}
+      // color={item.color}
       label={item.label}
       key={item.label}
       link={item.link}

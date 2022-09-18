@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { LoadingOverlay, Title } from '@mantine/core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';

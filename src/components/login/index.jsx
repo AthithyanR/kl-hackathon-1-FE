@@ -22,10 +22,9 @@ export default function AuthenticationTitle() {
     {
       onSuccess: ({ data: token }) => {
         setToLs('token', token);
-        navigate('/', { replace: true });
+        navigate('/interview', { replace: true });
       },
       onError: () => {
-        // navigate('/', { replace: true });
         showNotification({
           title: '',
           message: 'Login failed!',

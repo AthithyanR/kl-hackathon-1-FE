@@ -9,7 +9,6 @@ import {
   Grid,
   LoadingOverlay,
   Modal,
-  Paper,
   TextInput,
   Title,
 } from '@mantine/core';

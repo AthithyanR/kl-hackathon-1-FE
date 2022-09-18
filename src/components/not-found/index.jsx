@@ -70,7 +70,7 @@ export default function NotFound() {
             Page you are trying to open does not exist.
           </Text>
           <Group position="center">
-            <Button size="md" onClick={() => navigate('/')}>Take me back to home page</Button>
+            <Button size="md" onClick={() => navigate('/interview')}>Take me back to home page</Button>
           </Group>
         </div>
       </div>

@@ -150,7 +150,7 @@ const SelectItem = forwardRef(
   ),
 );
 
-function Demo() {
+function UpsertInterview() {
   const select = (
     <NativeSelect
       data={time}
@@ -195,7 +195,7 @@ function Demo() {
   );
 
   return (
-    <Paper shadow="md" p="md" withBorder>
+    <Paper shadow="md" p="md" withBorder style={{ width: 1000 }}>
       <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
         <MultiSelect
           label="Select Tech-Type"
@@ -388,4 +388,4 @@ function Demo() {
     </Paper>
   );
 }
-export default Demo;
+export default UpsertInterview;
