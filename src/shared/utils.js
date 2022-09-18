@@ -13,9 +13,3 @@ export function flushLs() {
 export function generateQS(obj) {
   return `?${new URLSearchParams({ ...obj }).toString()}`;
 }
-
-export function dropDownFilterLogic(value, selected, item) {
-  return !selected
-    && (item.label.toLowerCase().includes(value.toLowerCase().trim())
-      || item.description.toLowerCase().includes(value.toLowerCase().trim()));
-}

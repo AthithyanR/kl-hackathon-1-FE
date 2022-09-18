@@ -159,7 +159,7 @@ function TechTypes() {
   return (
     <>
       <Grid justify="space-between">
-        <Grid.Col span={1}>
+        <Grid.Col span={4}>
           <Title order={2} mb={4}>
             Tech Types
           </Title>

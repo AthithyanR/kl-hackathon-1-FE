@@ -1,328 +1,313 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable react/jsx-closing-bracket-location */
-/* eslint-disable max-len */
-import { React, useState } from 'react';
+import React, { forwardRef, useState } from 'react';
 import {
-  MultiSelect, Paper, Button, TextInput,
-  // NativeSelect,
-  createStyles,
-  // SegmentedControl,
-  Tabs, Accordion,
+  Title, Grid, Modal, MultiSelect, LoadingOverlay, Box,
+  CloseButton, Group, Button, Card, Text, Checkbox, Input, NumberInput,
 } from '@mantine/core';
-import { useForm } from '@mantine/form';
-import { dropDownFilterLogic } from '../../../shared/utils';
-import selectItem from './select-item';
+import { useQuery } from '@tanstack/react-query';
+import { IconAt } from '@tabler/icons';
+import { showNotification } from '@mantine/notifications';
 
-// const time = [
-//   { value: 'hours', label: 'Hours' },
-//   { value: 'day', label: 'Day' },
-// ];
-const useStyles = createStyles((theme) => ({
-  // button: {
-  //   position: 'relative',
-  //   transition: 'background-color 150ms ease',
-  // },
+import { queryConstants, questionTypes } from '../../../shared/constant-values';
+import baseApi from '../../../shared/api';
+import './upsert.scss';
 
-  // progress: {
-  //   position: 'absolute',
-  //   bottom: -1,
-  //   right: -1,
-  //   left: -1,
-  //   top: -1,
-  //   height: 'auto',
-  //   backgroundColor: 'transparent',
-  //   zIndex: 0,
-  // },
+const option = ({
+  label,
+  image,
+  onRemove,
+  classNames,
+  ...others
+}) => (
+  <div {...others}>
+    <Box
+      sx={(theme) => ({
+        display: 'flex',
+        cursor: 'default',
+        alignItems: 'center',
+        backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
+        border: `1px solid ${theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[4]}`,
+        paddingLeft: 10,
+        borderRadius: 4,
+      })}
+    >
+      <Box mr={10}>
+        <img src={image} width="20" alt={label} />
+      </Box>
+      <Box sx={{ lineHeight: 1, fontSize: 12 }}>{label}</Box>
+      <CloseButton
+        onMouseDown={onRemove}
+        variant="transparent"
+        size={22}
+        iconSize={14}
+        tabIndex={-1}
+      />
+    </Box>
+  </div>
+);
 
-  // label: {
-  //   position: 'relative',
-  //   zIndex: 1,
-  // },
-  // root: {
-  //   backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
-  //   borderRadius: theme.radius.sm,
-  // },
+const Item = forwardRef(({
+  label, image, ...others
+}, ref) => (
+  <div ref={ref} {...others}>
+    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      <Box mr={10} />
+      <img src={image} width="20" alt={label} />
+      <div>{label}</div>
+    </Box>
+  </div>
+));
 
-  // item: {
-  //   backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
-  //   border: '1px solid transparent',
-  //   position: 'relative',
-  //   zIndex: 0,
-  //   transition: 'transform 150ms ease',
+export default function AddInterview(props) {
+  const { opened, setOpened } = props;
+  const [techGroup, setTechGroup] = useState([]);
+  const [question, setQuestion] = useState([]);
+  const [selectOption, setSelectOption] = useState({ mode: questionTypes[0] });
+  const [quizParams, setQuizParams] = useState({ quizId: [] });
 
-  //   '&[data-active]': {
-  //     transform: 'scale(1.03)',
-  //     backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-  //     boxShadow: theme.shadows.md,
-  //     borderColor: theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2],
-  //     borderRadius: theme.radius.md,
-  //     zIndex: 1,
-  //   },
-  // },
+  const { data, isLoading, isError } = useQuery(
+    [queryConstants.techTypes],
+    () => baseApi.get('/techTypes'),
+  );
 
-  // chevron: {
-  //   '&[data-rotate]': {
-  //     transform: 'rotate(-90deg)',
-  //   },
-  // },
-}));
+  if (isLoading) {
+    return <LoadingOverlay visible overlayBlur={2} />;
+  }
 
-function UpsertInterview() {
-  // const select = (
-  //   <NativeSelect
-  //     data={time}
-  //     styles={{
-  //       input: {
-  //         fontWeight: 500,
-  //         borderTopLeftRadius: 0,
-  //         borderBottomLeftRadius: 0,
-  //       },
-  //     }}
-  //   />
-  // );
+  if (isError) {
+    return <Title>Error occurred</Title>;
+  }
 
-  const data = useForm({
-    initialValues: {
-      email: '',
-      passthreshold: '',
-      terms: true,
-    },
+  const getTechTypes = () => {
+    const { data: techData } = data;
+    if (techData) {
+      const types = techData.map(({ id, imgUrl, name }) => ({
+        id,
+        value: id,
+        label: name,
+        image: imgUrl,
+      }));
+      return types;
+    }
+    return [];
+  };
 
-    validate: {
-      email: (val) => (/^\S+@\S+$/.test(val) ? null : 'Invalid email'),
-      passthreshold: (val) => (val.length === 0 ? 'please Enter pass-threshold' : null),
-    },
-  });
+  const techTypes = getTechTypes();
 
-  const { classes, theme } = useStyles();
-  // const [progress, setProgress] = useState(0);
-  // const [loaded, setLoaded] = useState(false);
+  const fetchData = async (payload) => {
+    const { mode, techType } = payload;
+    const responseData = await baseApi.get('/questions', {
+      params: {
+        techTypeId: techType,
+        questionType: mode,
+      },
+    });
+    const { data: quiz } = responseData;
+    setQuestion(quiz);
+  };
 
-  // const interval = useInterval(
-  //   () => setProgress((current) => {
-  //     if (current < 100) {
-  //       return current + 1;
-  //     }
+  const onChange = (ids) => {
+    const selectedTechType = techTypes.filter(({ id }) => ids.includes(id));
+    setTechGroup(selectedTechType);
+    setSelectOption({ ...selectOption, techType: selectedTechType[0].id });
+    fetchData({ ...selectOption, techType: selectedTechType[0].id });
+  };
 
-  //     interval.stop();
-  //     setLoaded(true);
-  //     return 0;
-  //   }),
-  //   20,
-  // );
+  const setSingleValue = (key, value) => {
+    setSelectOption({ ...selectOption, [key]: value });
+    if (techGroup.length) fetchData({ ...selectOption, [key]: value });
+  };
+
+  const onCloseModal = () => {
+    setOpened(false);
+    setSelectOption({ mode: questionTypes[0] });
+    setTechGroup([]);
+    setQuestion([]);
+  };
+
+  const handleQuizParams = (key, value) => {
+    setQuizParams({ ...quizParams, [key]: value });
+  };
+
+  const handleSubmit = () => {
+    const {
+      quizId, emailId, passThreshold, examDuration,
+    } = quizParams;
+    baseApi.post('/interviewSession', {
+      passThreshold,
+      candidateEmail: emailId,
+      timeAllowedInMins: examDuration,
+      questionIds: JSON.stringify(quizId),
+    }).then(() => {
+      setOpened(false);
+      showNotification({
+        title: '',
+        message: 'Added Successfully',
+      });
+    }).catch(() => {
+      showNotification({
+        title: '',
+        message: 'Something went to wrong',
+      });
+    });
+  };
+
+  const { mode, techType } = selectOption;
+  const { quizId } = quizParams;
 
   return (
-    <Paper shadow="md" p="md" withBorder>
-      <div
-      // style={{ display: 'flex', justifyContent: 'center', width: '100%' }}
-      >
-        <MultiSelect
-          label="Select Tech Types"
-          placeholder="Click to select..."
-          itemComponent={selectItem}
-          data={[]}
-          searchable
-          nothingFound="No tech types available"
-          maxDropdownHeight={200}
-          filter={dropDownFilterLogic}
-          // style={{ textAlign: 'center', width: '80%' }}
-        />
-      </div>
-      <Paper
-        // sx={(theme) => ({
-        //   backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
-        //   textAlign: 'center',
-        //   padding: theme.spacing.xl,
-        //   borderRadius: theme.radius.md,
-        //   // cursor: 'pointer',
-
-        //   '&:hover': {
-        //     backgroundColor:
-        //     theme.colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[1],
-        //   },
-        // })}
-        // style={{ marginTop: '5%' }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <Paper
-          // sx={(theme) => ({ padding: theme.spacing.xl })}
-          // style={{ width: '100%' }}
-          >
-            {/* <SegmentedControl
-              transitionDuration={500}
-              transitionTimingFunction="linear"
-              data={[]}
-            /> */}
-            <div
-            // style={{ display: 'flex', justifyContent: 'space-evenly', marginTop: '2%', width: '100%' }}
-            >
-              <div
-                // style={{ width: '70%' }}
-                >
-                <Accordion
-                  // sx={{ maxWidth: 420 }}
-                  mx="auto"
-                  variant="filled"
-                  // classNames={classes}
-                  // className={classes.root}
-                >
-                  <Accordion.Item value="manually">
-                    <Accordion.Control>Pick Manually</Accordion.Control>
-                    <Accordion.Panel>
-                      <div
-                        // style={{ display: 'flex', justifyContent: 'center', width: '100%' }}
-                        >
-                        <Tabs color="indigo" variant="pills" radius="lg">
-                          <Tabs.List position="apart">
-                            <Tabs.Tab value="Easy">Easy</Tabs.Tab>
-                            <Tabs.Tab value="Medium">Medium</Tabs.Tab>
-                            <Tabs.Tab value="Hard">Hard</Tabs.Tab>
-                          </Tabs.List>
-
-                          <Tabs.Panel value="gallery" pt="xs">
-                            Gallery tab content
-                          </Tabs.Panel>
-
-                          <Tabs.Panel value="messages" pt="xs">
-                            Messages tab content
-                          </Tabs.Panel>
-
-                          <Tabs.Panel value="settings" pt="xs">
-                            Settings tab content
-                          </Tabs.Panel>
-                        </Tabs>
-                      </div>
-                      <div>
-                        <Paper>
-                          hello
-                        </Paper>
-                      </div>
-                      <div style={{ marginTop: '3%' }}>
-                        <Button
-                          // sx={(theme) => ({
-                          //   backgroundColor: theme.colors.dark[theme.colorScheme === 'dark' ? 9 : 6],
-                          //   color: '#fff',
-                          //   '&:hover': {
-                          //     backgroundColor: theme.colors.dark[theme.colorScheme === 'dark' ? 9 : 6],
-                          //   },
-                          // })}
-                        >
-                          Submit
-
-                        </Button>
-                      </div>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-                </Accordion>
-              </div>
-              <div
-              // style={{ width: '30%' }}
-              >
-                <Accordion
-                  // sx={{ maxWidth: 420 }}
-                  mx="auto"
-                  variant="filled"
-                  classNames={classes}
-                  className={classes.root}
-                >
-                  <Accordion.Item value="Randomly">
-                    <Accordion.Control>Pick Randomly</Accordion.Control>
-                    <Accordion.Panel>
-                      <div
-                      // style={{ width: '100%' }}
-                      >
-                        <div>
-                          <TextInput
-                            // style={{ width: '100%' }}
-                            required
-                            type="number"
-                            placeholder="Please Enter Marks"
-                            label="Total Marks"
-                          />
-                        </div>
-                        <div
-                        // style={{ marginTop: '3%' }}
-                        >
-                          <Button
-                          // leftIcon={<GithubIcon size={16} />}
-                            // sx={(theme) => ({
-                            //   backgroundColor: theme.colors.dark[theme.colorScheme === 'dark' ? 9 : 6],
-                            //   color: '#fff',
-                            //   '&:hover': {
-                            //     backgroundColor: theme.colors.dark[theme.colorScheme === 'dark' ? 9 : 6],
-                            //   },
-                            // })}
-                          >
-                            Pick Randomly
-
-                          </Button>
-                        </div>
-                      </div>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-                </Accordion>
-              </div>
-            </div>
-          </Paper>
-        </div>
-      </Paper>
-      <div
-        // style={{ display: 'flex', justifyContent: 'space-evenly', marginTop: '2%', width: '100%' }}
-      >
-        <TextInput
-          // style={{ width: '20%' }}
-          required
-          label="Email"
-          placeholder="Please Enter Applicant Email"
-          value={data.values.email}
-          onChange={(event) => data.setFieldValue('email', event.currentTarget.value)}
-          error={data.errors.email && 'Invalid email'}
-        />
-        <TextInput
-          // style={{ width: '20%' }}
-          required
-          label="Pass Threshold"
-          type="number"
-          placeholder="out of"
-          value={data.values.passthreshold}
-          onChange={(event) => data.setFieldValue('passthreshold', event.currentTarget.value)}
-          error={data.errors.passthreshold && 'Invalid value'}
-        />
-        <TextInput
-          // style={{ width: '25%' }}
-          required
-          type="number"
-          placeholder="Please Enter Duration "
-          label="Duration"
-          // rightSection={select}
-          rightSectionWidth={83}
-        />
-      </div>
-      <div
-        // style={{ display: 'flex', justifyContent: 'center', marginTop: '5%' }}
-      >
-        <Button
-          // style={{ display: 'flex', width: '40%', justifyContent: 'center' }}
-          fullWidth
-          className={classes.button}
-          // onClick={() => (loaded ? setLoaded(false) : !interval.active && interval.start())}
-          // color={loaded ? 'teal' : theme.primaryColor}
+    <Modal
+      title="Add Schedule"
+      opened={opened}
+      // size="60%"
+      fullScreen
+      onClose={() => onCloseModal()}
+    >
+      <Grid className="schedule-interview-model-content">
+        <Grid.Col
+          mt={10}
         >
-          Submit
-          {/* <div className={classes.label}>
-            {progress !== 0 ? 'Submiting' : loaded ? 'Submited' : 'Submit'}
-          </div>
-          {progress !== 0 && (
-          <Progress
-            value={progress}
-            className={classes.progress}
-            color={theme.fn.rgba(theme.colors[theme.primaryColor][2], 0.35)}
-            radius="sm"
+          <MultiSelect
+            data={techTypes}
+            limit={20}
+            valueComponent={option}
+            itemComponent={Item}
+            searchable
+            size="md"
+            onChange={(e) => onChange(e)}
+            placeholder="Select Tech Type"
           />
-          )} */}
-        </Button>
-      </div>
-    </Paper>
+
+        </Grid.Col>
+        {techGroup.length ? (
+          <Grid.Col
+            mt={10}
+            className="card"
+          >
+            <Group spacing="lg">
+              {techGroup.map(({ label, id }) => (
+                <Button
+                  key={id}
+                  className="option-btn"
+                  style={{ backgroundColor: techType === id ? '#6f6af8' : '#ffffff', color: '#343a40' }}
+                  onClick={() => setSingleValue('techType', id)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </Group>
+          </Grid.Col>
+        ) : ''}
+
+        <Grid.Col
+          className="card"
+          mt={10}
+        >
+          <Group grow>
+            {questionTypes.map((type) => (
+              <Button
+                key={type}
+                className="option-btn"
+                style={{ backgroundColor: mode === type ? '#6f6af8' : '#ffffff', color: '#343a40' }}
+                onClick={() => setSingleValue('mode', type)}
+              >
+                {type}
+              </Button>
+            ))}
+          </Group>
+        </Grid.Col>
+        {question.length ? (
+          <>
+            <Grid.Col
+              className="question"
+              mt={10}
+            >
+              <Checkbox.Group
+                defaultValue={[...quizId]}
+                orientation="vertical"
+                spacing="xs"
+                onChange={(e) => handleQuizParams('quizId', e)}
+              >
+                {question.map((quiz) => (
+                  <Card
+                    shadow="sm"
+                    mb={10}
+                    p={8}
+                  >
+                    <Checkbox
+                      value={quiz.id}
+                      label={(
+                        <Text weight={500} size="md">
+                          {quiz.question}
+                        </Text>
+                   )}
+                    />
+                    <Group>
+                      <Text mt="xs" color="dimmed" size="sm">
+                        {quiz.option1}
+                      </Text>
+                      <Text mt="xs" color="dimmed" size="sm">
+                        {quiz.option2}
+                      </Text>
+                      <Text mt="xs" color="dimmed" size="sm">
+                        {quiz.option3}
+                      </Text>
+                      <Text mt="xs" color="dimmed" size="sm">
+                        {quiz.option4}
+                      </Text>
+                    </Group>
+                    <Text weight={500}>
+                      Ans:&nbsp;
+                      {quiz.correctOption}
+                    </Text>
+                  </Card>
+                ))}
+              </Checkbox.Group>
+            </Grid.Col>
+            <Grid.Col
+              mt={10}
+              span={4}
+            >
+              <Input
+                icon={<IconAt />}
+                placeholder="Enter the email id"
+                radius="md"
+                onChange={(e) => handleQuizParams('emailId', e.target.value)}
+              />
+            </Grid.Col>
+            <Grid.Col
+              mt={10}
+              span={4}
+            >
+              <NumberInput
+                placeholder="Enter the pass threshold"
+                radius="md"
+                hideControls
+                onChange={(e) => handleQuizParams('passThreshold', e)}
+              />
+            </Grid.Col>
+            <Grid.Col
+              mt={10}
+              span={4}
+            >
+              <NumberInput
+                placeholder="Enter the Allowed Duration(ms)"
+                radius="md"
+                hideControls
+                onChange={(e) => handleQuizParams('examDuration', e)}
+              />
+            </Grid.Col>
+            <Grid.Col
+              mt={10}
+              style={{ float: 'right' }}
+            >
+              <Button onClick={() => handleSubmit()}>
+                Save
+
+              </Button>
+            </Grid.Col>
+          </>
+        ) : ''}
+      </Grid>
+    </Modal>
   );
 }
-export default UpsertInterview;
