@@ -1,4 +1,6 @@
-import React, { forwardRef, useState } from 'react';
+/* eslint-disable no-use-before-define */
+/* eslint-disable max-len */
+import React, { forwardRef, useState, useEffect } from 'react';
 import {
   Title, Grid, Modal, MultiSelect, LoadingOverlay, Box,
   CloseButton, Group, Button, Card, Text, Checkbox, Input, NumberInput,
@@ -10,6 +12,7 @@ import { showNotification } from '@mantine/notifications';
 import { queryConstants, questionTypes } from '../../../shared/constant-values';
 import baseApi from '../../../shared/api';
 import './upsert.scss';
+import { isEmpty } from '../../../shared/utils';
 
 const option = ({
   label,
@@ -62,59 +65,77 @@ export default function AddInterview(props) {
   const [techGroup, setTechGroup] = useState([]);
   const [question, setQuestion] = useState([]);
   const [selectOption, setSelectOption] = useState({ mode: questionTypes[0] });
-  const [quizParams, setQuizParams] = useState({ quizId: [] });
+  const [quizParams, setQuizParams] = useState({});
+  const [isInvalidRandomCount, setIsInvalidRandomCount] = useState({});
 
-  const { data, isLoading, isError } = useQuery(
+  const { mode, techType } = selectOption;
+
+  // console.log({
+  //   selectOption, quizParams,
+  // });
+
+  const { data: techTypesQuery, isLoading, isError } = useQuery(
     [queryConstants.techTypes],
     () => baseApi.get('/techTypes'),
   );
 
-  if (isLoading) {
-    return <LoadingOverlay visible overlayBlur={2} />;
-  }
-
-  if (isError) {
-    return <Title>Error occurred</Title>;
-  }
-
-  const getTechTypes = () => {
-    const { data: techData } = data;
-    if (techData) {
-      const types = techData.map(({ id, imgUrl, name }) => ({
-        id,
-        value: id,
-        label: name,
-        image: imgUrl,
-      }));
-      return types;
+  useEffect(() => {
+    if (selectOption.techType) {
+      fetchData();
     }
-    return [];
-  };
+  }, [selectOption]);
 
-  const techTypes = getTechTypes();
+  const techTypes = techTypesQuery?.data.map(({ id, imgUrl, name }) => ({
+    id,
+    value: id,
+    label: name,
+    image: imgUrl,
+  })) || [];
 
-  const fetchData = async (payload) => {
-    const { mode, techType } = payload;
-    const responseData = await baseApi.get('/questions', {
-      params: {
-        techTypeId: techType,
-        questionType: mode,
-      },
-    });
-    const { data: quiz } = responseData;
-    setQuestion(quiz);
+  const fetchData = async () => {
+    try {
+      const responseData = await baseApi.get('/questions', {
+        params: {
+          techTypeId: techType,
+          questionType: mode,
+        },
+      });
+      const { data: quiz } = responseData;
+      setQuestion(quiz);
+    } catch (err) {
+      console.log(`error while fetching data - ${err}`);
+    }
   };
 
   const onChange = (ids) => {
-    const selectedTechType = techTypes.filter(({ id }) => ids.includes(id));
-    setTechGroup(selectedTechType);
-    setSelectOption({ ...selectOption, techType: selectedTechType[0].id });
-    fetchData({ ...selectOption, techType: selectedTechType[0].id });
+    const validTechTypes = ids.length < techGroup.length
+      ? techGroup.filter(({ id }) => ids.includes(id))
+      : [...techGroup, techTypes.find(({ id }) => id === ids.at(-1))];
+
+    if (selectOption.techType) {
+      if (!ids.includes(selectOption.techType)) {
+        const currentIdx = techGroup.findIndex((obj) => obj.id === selectOption.techType);
+        const validNewIdx = currentIdx - 1 >= 0 ? currentIdx - 1 : currentIdx;
+        setSelectOption({ ...selectOption, techType: validTechTypes[validNewIdx]?.id });
+      }
+    } else {
+      setSelectOption({ ...selectOption, techType: validTechTypes[0]?.id });
+    }
+
+    setTechGroup(validTechTypes);
+
+    Object.keys(quizParams).forEach((k) => !ids.includes(k) && delete quizParams[k]);
+    setQuizParams(quizParams);
+
+    if (!validTechTypes.length) {
+      setQuestion([]);
+      setQuizParams({});
+    }
   };
 
   const setSingleValue = (key, value) => {
+    if (selectOption[key] === value) return;
     setSelectOption({ ...selectOption, [key]: value });
-    if (techGroup.length) fetchData({ ...selectOption, [key]: value });
   };
 
   const onCloseModal = () => {
@@ -124,8 +145,43 @@ export default function AddInterview(props) {
     setQuestion([]);
   };
 
-  const handleQuizParams = (key, value) => {
-    setQuizParams({ ...quizParams, [key]: value });
+  const handleQuestionState = (e) => () => {
+    if (!quizParams[selectOption.techType]) {
+      quizParams[selectOption.techType] = {};
+    }
+    if (!quizParams[selectOption.techType][selectOption.mode]) {
+      quizParams[selectOption.techType][selectOption.mode] = [];
+    }
+
+    if (!quizParams[selectOption.techType][selectOption.mode].includes(e)) {
+      quizParams[selectOption.techType][selectOption.mode].push(e);
+    } else if (quizParams[selectOption.techType][selectOption.mode].length === 1) {
+      delete quizParams[selectOption.techType][selectOption.mode];
+      if (isEmpty(quizParams[selectOption.techType])) {
+        delete quizParams[selectOption.techType];
+      }
+    } else {
+      quizParams[selectOption.techType][selectOption.mode] = quizParams[selectOption.techType][selectOption.mode]
+        .filter((id) => id !== e);
+    }
+    setQuizParams({ ...quizParams });
+  };
+
+  const handleRandomization = (e) => {
+    if (!quizParams[selectOption.techType]) {
+      quizParams[selectOption.techType] = {};
+    }
+    if (!e.target.value) {
+      quizParams[selectOption.techType][selectOption.mode] = [];
+    } else {
+      quizParams[selectOption.techType][selectOption.mode] = Number(e.target.value);
+    }
+    if (question.length < Number(e.target.value)) {
+      setIsInvalidRandomCount({ ...isInvalidRandomCount, [techType]: mode });
+    } else {
+      delete isInvalidRandomCount[techType];
+      setIsInvalidRandomCount({ ...isInvalidRandomCount });
+    }
   };
 
   const handleSubmit = () => {
@@ -151,15 +207,20 @@ export default function AddInterview(props) {
     });
   };
 
-  const { mode, techType } = selectOption;
-  const { quizId } = quizParams;
+  if (isLoading) {
+    return <LoadingOverlay visible overlayBlur={2} />;
+  }
+
+  if (isError) {
+    return <Title>Error occurred</Title>;
+  }
 
   return (
     <Modal
-      title="Add Schedule"
+      title="Schedule Interview"
       opened={opened}
-      // size="60%"
-      fullScreen
+      size="80%"
+      // fullScreen
       onClose={() => onCloseModal()}
     >
       <Grid className="schedule-interview-model-content">
@@ -178,7 +239,7 @@ export default function AddInterview(props) {
           />
 
         </Grid.Col>
-        {techGroup.length ? (
+        {!!techGroup.length && (
           <Grid.Col
             mt={10}
             className="card"
@@ -196,8 +257,7 @@ export default function AddInterview(props) {
               ))}
             </Group>
           </Grid.Col>
-        ) : ''}
-
+        )}
         <Grid.Col
           className="card"
           mt={10}
@@ -215,53 +275,53 @@ export default function AddInterview(props) {
             ))}
           </Group>
         </Grid.Col>
-        {question.length ? (
+        {!!question.length && (
           <>
+            <Input
+              value={quizParams[selectOption.techType]?.[selectOption.mode]}
+              type="number"
+              placeholder="Choose random count"
+              radius="md"
+              onChange={handleRandomization}
+              rightSection={
+                <p>{question.length}</p>
+              }
+              disabled={(quizParams[selectOption.techType]?.[selectOption.mode] || []).length}
+            />
+            {isInvalidRandomCount[techType] === mode && 'invalid marks value'}
             <Grid.Col
               className="question"
               mt={10}
             >
-              <Checkbox.Group
-                defaultValue={[...quizId]}
-                orientation="vertical"
-                spacing="xs"
-                onChange={(e) => handleQuizParams('quizId', e)}
-              >
-                {question.map((quiz) => (
-                  <Card
-                    shadow="sm"
-                    mb={10}
-                    p={8}
-                  >
-                    <Checkbox
-                      value={quiz.id}
-                      label={(
-                        <Text weight={500} size="md">
-                          {quiz.question}
-                        </Text>
+              {question.map((q) => (
+                <Card
+                  shadow="sm"
+                  mb={10}
+                  p={20}
+                  key={q.id}
+                  onClick={handleQuestionState(q.id)}
+                  style={
+                    (typeof quizParams[selectOption.techType]?.[selectOption.mode] === 'number')
+                      ? { pointerEvents: 'none' }
+                      : {}
+                  }
+                >
+                  <Checkbox
+                    checked={
+                      Array.isArray(quizParams[selectOption.techType]?.[selectOption.mode])
+                      && quizParams[selectOption.techType][selectOption.mode].includes(q.id)
+                  }
+                    readOnly
+                    label={(
+                      <Text weight={500} size="md">
+                        {q.question}
+                        {' : '}
+                        {q.marks}
+                      </Text>
                    )}
-                    />
-                    <Group>
-                      <Text mt="xs" color="dimmed" size="sm">
-                        {quiz.option1}
-                      </Text>
-                      <Text mt="xs" color="dimmed" size="sm">
-                        {quiz.option2}
-                      </Text>
-                      <Text mt="xs" color="dimmed" size="sm">
-                        {quiz.option3}
-                      </Text>
-                      <Text mt="xs" color="dimmed" size="sm">
-                        {quiz.option4}
-                      </Text>
-                    </Group>
-                    <Text weight={500}>
-                      Ans:&nbsp;
-                      {quiz.correctOption}
-                    </Text>
-                  </Card>
-                ))}
-              </Checkbox.Group>
+                  />
+                </Card>
+              ))}
             </Grid.Col>
             <Grid.Col
               mt={10}
@@ -271,7 +331,7 @@ export default function AddInterview(props) {
                 icon={<IconAt />}
                 placeholder="Enter the email id"
                 radius="md"
-                onChange={(e) => handleQuizParams('emailId', e.target.value)}
+                // onChange={(e) => handleQuizParams('emailId', e.target.value)}
               />
             </Grid.Col>
             <Grid.Col
@@ -282,7 +342,7 @@ export default function AddInterview(props) {
                 placeholder="Enter the pass threshold"
                 radius="md"
                 hideControls
-                onChange={(e) => handleQuizParams('passThreshold', e)}
+                // onChange={(e) => handleQuizParams('passThreshold', e)}
               />
             </Grid.Col>
             <Grid.Col
@@ -293,7 +353,7 @@ export default function AddInterview(props) {
                 placeholder="Enter the Allowed Duration(ms)"
                 radius="md"
                 hideControls
-                onChange={(e) => handleQuizParams('examDuration', e)}
+                // onChange={(e) => handleQuizParams('examDuration', e)}
               />
             </Grid.Col>
             <Grid.Col
@@ -306,7 +366,7 @@ export default function AddInterview(props) {
               </Button>
             </Grid.Col>
           </>
-        ) : ''}
+        )}
       </Grid>
     </Modal>
   );
