@@ -62,16 +62,17 @@ const Item = forwardRef(({
 
 export default function AddInterview(props) {
   const { opened, setOpened } = props;
-  const [techGroup, setTechGroup] = useState([]);
-  const [question, setQuestion] = useState([]);
-  const [selectOption, setSelectOption] = useState({ mode: questionTypes[0] });
-  const [quizParams, setQuizParams] = useState({});
-  const [isInvalidRandomCount, setIsInvalidRandomCount] = useState({});
+  const [selectedTechGroup, setSelectedTechGroup] = useState([]);
+  const [questions, setQuestions] = useState([]);
+  const [selectOption, setSelectOption] = useState({ questionType: questionTypes[0] });
+  const [questionSelection, setQuesionSelection] = useState({});
+  const [invalidRandomCount, setInvalidRandomCount] = useState({});
+  const [interviewParams, setInterviewParams] = useState({});
 
-  const { mode, techType } = selectOption;
+  const { questionType, techType } = selectOption;
 
   // console.log({
-  //   selectOption, quizParams,
+  //   selectOption, questionSelection,
   // });
 
   const { data: techTypesQuery, isLoading, isError } = useQuery(
@@ -97,24 +98,24 @@ export default function AddInterview(props) {
       const responseData = await baseApi.get('/questions', {
         params: {
           techTypeId: techType,
-          questionType: mode,
+          questionType,
         },
       });
       const { data: quiz } = responseData;
-      setQuestion(quiz);
+      setQuestions(quiz);
     } catch (err) {
       console.log(`error while fetching data - ${err}`);
     }
   };
 
   const onChange = (ids) => {
-    const validTechTypes = ids.length < techGroup.length
-      ? techGroup.filter(({ id }) => ids.includes(id))
-      : [...techGroup, techTypes.find(({ id }) => id === ids.at(-1))];
+    const validTechTypes = ids.length < selectedTechGroup.length
+      ? selectedTechGroup.filter(({ id }) => ids.includes(id))
+      : [...selectedTechGroup, techTypes.find(({ id }) => id === ids.at(-1))];
 
     if (selectOption.techType) {
       if (!ids.includes(selectOption.techType)) {
-        const currentIdx = techGroup.findIndex((obj) => obj.id === selectOption.techType);
+        const currentIdx = selectedTechGroup.findIndex((obj) => obj.id === selectOption.techType);
         const validNewIdx = currentIdx - 1 >= 0 ? currentIdx - 1 : currentIdx;
         setSelectOption({ ...selectOption, techType: validTechTypes[validNewIdx]?.id });
       }
@@ -122,14 +123,14 @@ export default function AddInterview(props) {
       setSelectOption({ ...selectOption, techType: validTechTypes[0]?.id });
     }
 
-    setTechGroup(validTechTypes);
+    setSelectedTechGroup(validTechTypes);
 
-    Object.keys(quizParams).forEach((k) => !ids.includes(k) && delete quizParams[k]);
-    setQuizParams(quizParams);
+    Object.keys(questionSelection).forEach((k) => !ids.includes(k) && delete questionSelection[k]);
+    setQuesionSelection(questionSelection);
 
     if (!validTechTypes.length) {
-      setQuestion([]);
-      setQuizParams({});
+      setQuestions([]);
+      setQuesionSelection({});
     }
   };
 
@@ -140,59 +141,56 @@ export default function AddInterview(props) {
 
   const onCloseModal = () => {
     setOpened(false);
-    setSelectOption({ mode: questionTypes[0] });
-    setTechGroup([]);
-    setQuestion([]);
+    setSelectOption({ questionType: questionTypes[0] });
+    setSelectedTechGroup([]);
+    setQuestions([]);
+    setInvalidRandomCount({});
+    setInvalidRandomCount({});
   };
 
   const handleQuestionState = (e) => () => {
-    if (!quizParams[selectOption.techType]) {
-      quizParams[selectOption.techType] = {};
+    if (!questionSelection[selectOption.techType]) {
+      questionSelection[selectOption.techType] = {};
     }
-    if (!quizParams[selectOption.techType][selectOption.mode]) {
-      quizParams[selectOption.techType][selectOption.mode] = [];
+    if (!questionSelection[selectOption.techType][selectOption.questionType]) {
+      questionSelection[selectOption.techType][selectOption.questionType] = [];
     }
 
-    if (!quizParams[selectOption.techType][selectOption.mode].includes(e)) {
-      quizParams[selectOption.techType][selectOption.mode].push(e);
-    } else if (quizParams[selectOption.techType][selectOption.mode].length === 1) {
-      delete quizParams[selectOption.techType][selectOption.mode];
-      if (isEmpty(quizParams[selectOption.techType])) {
-        delete quizParams[selectOption.techType];
+    if (!questionSelection[selectOption.techType][selectOption.questionType].includes(e)) {
+      questionSelection[selectOption.techType][selectOption.questionType].push(e);
+    } else if (questionSelection[selectOption.techType][selectOption.questionType].length === 1) {
+      delete questionSelection[selectOption.techType][selectOption.questionType];
+      if (isEmpty(questionSelection[selectOption.techType])) {
+        delete questionSelection[selectOption.techType];
       }
     } else {
-      quizParams[selectOption.techType][selectOption.mode] = quizParams[selectOption.techType][selectOption.mode]
+      questionSelection[selectOption.techType][selectOption.questionType] = questionSelection[selectOption.techType][selectOption.questionType]
         .filter((id) => id !== e);
     }
-    setQuizParams({ ...quizParams });
+    setQuesionSelection({ ...questionSelection });
   };
 
   const handleRandomization = (e) => {
-    if (!quizParams[selectOption.techType]) {
-      quizParams[selectOption.techType] = {};
+    if (!questionSelection[selectOption.techType]) {
+      questionSelection[selectOption.techType] = {};
     }
     if (!e.target.value) {
-      quizParams[selectOption.techType][selectOption.mode] = [];
+      questionSelection[selectOption.techType][selectOption.questionType] = [];
     } else {
-      quizParams[selectOption.techType][selectOption.mode] = Number(e.target.value);
+      questionSelection[selectOption.techType][selectOption.questionType] = Number(e.target.value);
     }
-    if (question.length < Number(e.target.value)) {
-      setIsInvalidRandomCount({ ...isInvalidRandomCount, [techType]: mode });
+    if (questions.length < Number(e.target.value)) {
+      setInvalidRandomCount({ ...invalidRandomCount, [techType]: questionType });
     } else {
-      delete isInvalidRandomCount[techType];
-      setIsInvalidRandomCount({ ...isInvalidRandomCount });
+      delete invalidRandomCount[techType];
+      setInvalidRandomCount({ ...invalidRandomCount });
     }
   };
 
-  const handleSubmit = () => {
-    const {
-      quizId, emailId, passThreshold, examDuration,
-    } = quizParams;
+  const doSubmit = async () => {
     baseApi.post('/interviewSession', {
-      passThreshold,
-      candidateEmail: emailId,
-      timeAllowedInMins: examDuration,
-      questionIds: JSON.stringify(quizId),
+
+      questionSelection,
     }).then(() => {
       setOpened(false);
       showNotification({
@@ -205,6 +203,10 @@ export default function AddInterview(props) {
         message: 'Something went to wrong',
       });
     });
+  };
+
+  const handleSubmit = () => {
+    doSubmit();
   };
 
   if (isLoading) {
@@ -239,13 +241,13 @@ export default function AddInterview(props) {
           />
 
         </Grid.Col>
-        {!!techGroup.length && (
+        {!!selectedTechGroup.length && (
           <Grid.Col
             mt={10}
             className="card"
           >
             <Group spacing="lg">
-              {techGroup.map(({ label, id }) => (
+              {selectedTechGroup.map(({ label, id }) => (
                 <Button
                   key={id}
                   className="option-btn"
@@ -267,33 +269,33 @@ export default function AddInterview(props) {
               <Button
                 key={type}
                 className="option-btn"
-                style={{ backgroundColor: mode === type ? '#6f6af8' : '#ffffff', color: '#343a40' }}
-                onClick={() => setSingleValue('mode', type)}
+                style={{ backgroundColor: questionType === type ? '#6f6af8' : '#ffffff', color: '#343a40' }}
+                onClick={() => setSingleValue('questionType', type)}
               >
                 {type}
               </Button>
             ))}
           </Group>
         </Grid.Col>
-        {!!question.length && (
+        {!!questions.length && (
           <>
             <Input
-              value={quizParams[selectOption.techType]?.[selectOption.mode]}
+              value={questionSelection[selectOption.techType]?.[selectOption.questionType]}
               type="number"
               placeholder="Choose random count"
               radius="md"
               onChange={handleRandomization}
               rightSection={
-                <p>{question.length}</p>
+                <p>{questions.length}</p>
               }
-              disabled={(quizParams[selectOption.techType]?.[selectOption.mode] || []).length}
+              disabled={(questionSelection[selectOption.techType]?.[selectOption.questionType] || []).length}
             />
-            {isInvalidRandomCount[techType] === mode && 'invalid marks value'}
+            {invalidRandomCount[techType] === questionType && 'invalid marks value'}
             <Grid.Col
               className="question"
               mt={10}
             >
-              {question.map((q) => (
+              {questions.map((q) => (
                 <Card
                   shadow="sm"
                   mb={10}
@@ -301,15 +303,15 @@ export default function AddInterview(props) {
                   key={q.id}
                   onClick={handleQuestionState(q.id)}
                   style={
-                    (typeof quizParams[selectOption.techType]?.[selectOption.mode] === 'number')
+                    (typeof questionSelection[selectOption.techType]?.[selectOption.questionType] === 'number')
                       ? { pointerEvents: 'none' }
                       : {}
                   }
                 >
                   <Checkbox
                     checked={
-                      Array.isArray(quizParams[selectOption.techType]?.[selectOption.mode])
-                      && quizParams[selectOption.techType][selectOption.mode].includes(q.id)
+                      Array.isArray(questionSelection[selectOption.techType]?.[selectOption.questionType])
+                      && questionSelection[selectOption.techType][selectOption.questionType].includes(q.id)
                   }
                     readOnly
                     label={(
@@ -331,7 +333,8 @@ export default function AddInterview(props) {
                 icon={<IconAt />}
                 placeholder="Enter the email id"
                 radius="md"
-                // onChange={(e) => handleQuizParams('emailId', e.target.value)}
+                value={interviewParams.emailId}
+                onChange={(e) => setInterviewParams((prev) => ({ ...prev, emailId: e.target.value }))}
               />
             </Grid.Col>
             <Grid.Col
@@ -339,21 +342,10 @@ export default function AddInterview(props) {
               span={4}
             >
               <NumberInput
-                placeholder="Enter the pass threshold"
+                placeholder="Enter the Allowed Duration"
                 radius="md"
-                hideControls
-                // onChange={(e) => handleQuizParams('passThreshold', e)}
-              />
-            </Grid.Col>
-            <Grid.Col
-              mt={10}
-              span={4}
-            >
-              <NumberInput
-                placeholder="Enter the Allowed Duration(ms)"
-                radius="md"
-                hideControls
-                // onChange={(e) => handleQuizParams('examDuration', e)}
+                value={interviewParams.durationInMins}
+                onChange={(e) => setInterviewParams((prev) => ({ ...prev, durationInMins: e }))}
               />
             </Grid.Col>
             <Grid.Col
