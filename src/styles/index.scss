@@ -24,52 +24,60 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 #root,
-.mantine-AppShell-root,
-.mantine-AppShell-body {
+.mantine-AppShell-root {
   height: 100%;
 }
-
-.sider {
-  background-color: #6f6af8;
-  width: 3%;
-  border-radius: 8px;
-  height: 90%;
-  border: none;
-  margin: auto auto auto 2%;
-  box-shadow: 4px 4px 8px 1px #8f8c8c;
-  .mantine-Avatar-root{
-    margin: 14% auto;
-  }
-  .mantine-NavLink-root {
-    .mantine-NavLink {
-      &-icon {
-        margin: 0;
+.mantine-AppShell-body {
+  height: 100%;
+  & .sider {
+    background-color: #311b92;
+    width: 4%;
+    border-radius: 0;
+    height: 100%;
+    border: none;
+    margin: auto;
+    z-index: 1;
+    margin-right: 2%;
+    .mantine-Avatar-root {
+      margin: 14% auto;
+    }
+    .mantine-NavLink-root {
+      .mantine-NavLink {
+        &-icon {
+          margin: 0;
+        }
+        &-body {
+          display: none;
+        }
       }
-      &-body {
-        display: none;
+    }
+    &Menu {
+      margin: 0;
+      width: 100%;
+      display: block;
+      padding: 16% 0;
+      &[data-active] {
+        color: #fefefe;
+        background-color: transparent;
+        position: relative;
+        &::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          top: 20%;
+          height: 70%;
+          width: 4%;
+          background-color: #fefefe;
+          z-index: 1;
+          border-radius: 0 4px 4px 0;
+        }
       }
     }
   }
-  &Menu{
-    margin: 0;
-    width: 100%;
-    display: block;
-    padding: 16% 0;
-    &[data-active]{
-      color: #fefefe;
-      background-color: transparent;
-      position: relative;
-      &::after{
-        content: "";
-        position: absolute;
-        left: 0;
-        top: 20%;
-        height: 60%;
-        width: 4%;
-        background-color: #fefefe;
-        z-index: 1;
-        border-radius: 0 4px 4px 0;
-      }
-    }
+  .mantine-AppShell-main{
+    margin-left: -2.4%;
+    z-index: 9;
+    background: #f8fafb;
+    border-radius: 8px 0 0 8px
   }
 }
