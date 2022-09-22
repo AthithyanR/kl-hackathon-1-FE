@@ -1,12 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
-  ActionIcon, Grid, Paper, Title,
+  ActionIcon, Grid, LoadingOverlay, Paper, Title,
 } from '@mantine/core';
 import { IconPlaylistAdd } from '@tabler/icons';
+import { useQuery } from '@tanstack/react-query';
+
 import UpsertInterview from './upsert';
+import { queryConstants } from '../../shared/constant-values';
+import baseApi from '../../shared/api';
+import TableComponent from '../../shared/components/table';
+import tableConfig from '../../shared/meta-data/table/assessment';
 
 export default function Interview() {
   const [opened, setOpened] = useState(false);
+  const { data: assessmentSessionQuery, isLoading, isError } = useQuery(
+    [queryConstants.assessments],
+    () => baseApi.get('/assessmentSession'),
+  );
+
+  const assessmentSessions = assessmentSessionQuery?.data || [];
+
+  const handleEdit = useCallback((obj) => {
+    console.log('edit', obj);
+  }, []);
+
+  const handleDelete = useCallback((obj) => {
+    console.log('delete', obj);
+  }, []);
+
+  const handlers = useMemo(() => ({
+    handleEdit,
+    handleDelete,
+  }), []);
+
+  if (isLoading) {
+    return <LoadingOverlay visible overlayBlur={2} />;
+  }
+
+  if (isError) {
+    return <Title>Error occurred</Title>;
+  }
 
   return (
     <Paper p={10}>
@@ -27,7 +60,7 @@ export default function Interview() {
         </Grid.Col>
       </Grid>
       <Grid>
-        Table
+        <TableComponent data={assessmentSessions} config={tableConfig} handlers={handlers} />
         <UpsertInterview opened={opened} setOpened={setOpened} />
       </Grid>
     </Paper>
