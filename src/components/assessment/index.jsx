@@ -13,7 +13,7 @@ export default function Interview() {
       <Grid justify="space-between">
         <Grid.Col span={4}>
           <Title order={2} mb={4}>
-            Interview
+            Assessment
           </Title>
         </Grid.Col>
         <Grid.Col span={1}>

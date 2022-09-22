@@ -67,7 +67,8 @@ export default function AddInterview(props) {
   const [selectOption, setSelectOption] = useState({ questionType: questionTypes[0] });
   const [questionSelection, setQuesionSelection] = useState({});
   const [invalidRandomCount, setInvalidRandomCount] = useState({});
-  const [interviewParams, setInterviewParams] = useState({});
+  const [interviewParams, setInterviewParams] = useState({ durationInMins: 60 });
+  const [emailError, setEmailError] = useState(false);
 
   const { questionType, techType } = selectOption;
 
@@ -189,7 +190,6 @@ export default function AddInterview(props) {
 
   const doSubmit = async () => {
     baseApi.post('/interviewSession', {
-
       questionSelection,
     }).then(() => {
       setOpened(false);
@@ -217,15 +217,27 @@ export default function AddInterview(props) {
     return <Title>Error occurred</Title>;
   }
 
+  const checkEmail = (e) => {
+    const { value } = e.target;
+    const splitEmail = value.split(',');
+    splitEmail.forEach((i) => {
+      const email = i.trim();
+      // eslint-disable-next-line no-useless-escape
+      const regEx = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
+      setEmailError(!regEx.test(email));
+    });
+    setInterviewParams((prev) => ({ ...prev, emailId: value }));
+  };
+
   return (
     <Modal
-      title="Schedule Interview"
+      title="Schedule Assessment"
       opened={opened}
       size="80%"
       // fullScreen
       onClose={() => onCloseModal()}
     >
-      <Grid className="schedule-interview-model-content">
+      <Grid className="schedule-assessment-model-content">
         <Grid.Col
           mt={10}
         >
@@ -308,20 +320,31 @@ export default function AddInterview(props) {
                       : {}
                   }
                 >
-                  <Checkbox
-                    checked={
+                  <Grid>
+                    <Grid.Col
+                      span={11}
+                    >
+                      <Checkbox
+                        checked={
                       Array.isArray(questionSelection[selectOption.techType]?.[selectOption.questionType])
                       && questionSelection[selectOption.techType][selectOption.questionType].includes(q.id)
                   }
-                    readOnly
-                    label={(
-                      <Text weight={500} size="md">
-                        {q.question}
-                        {' : '}
-                        {q.marks}
-                      </Text>
+                        readOnly
+                        label={(
+                          <Text weight={500} size="md">
+                            <pre>
+                              {q.question}
+                            </pre>
+                          </Text>
                    )}
-                  />
+                      />
+                    </Grid.Col>
+                    <Grid.Col
+                      span={1}
+                    >
+                      {q.marks}
+                    </Grid.Col>
+                  </Grid>
                 </Card>
               ))}
             </Grid.Col>
@@ -334,7 +357,8 @@ export default function AddInterview(props) {
                 placeholder="Enter the email id"
                 radius="md"
                 value={interviewParams.emailId}
-                onChange={(e) => setInterviewParams((prev) => ({ ...prev, emailId: e.target.value }))}
+                onChange={(e) => checkEmail(e)}
+                invalid={emailError}
               />
             </Grid.Col>
             <Grid.Col
@@ -345,6 +369,7 @@ export default function AddInterview(props) {
                 placeholder="Enter the Allowed Duration"
                 radius="md"
                 value={interviewParams.durationInMins}
+                hideControls
                 onChange={(e) => setInterviewParams((prev) => ({ ...prev, durationInMins: e }))}
               />
             </Grid.Col>
