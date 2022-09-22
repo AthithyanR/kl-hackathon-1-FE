@@ -26,8 +26,6 @@ export default function AddQuestion(props) {
     option4: '',
     correctoption: '',
   };
-  console.log('modelkey', modelKey);
-  console.log('modelkehelncsy', editObject);
   useEffect(() => {
     if (modelKey === 'edit') {
       init = {

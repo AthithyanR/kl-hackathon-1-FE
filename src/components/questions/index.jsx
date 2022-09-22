@@ -106,9 +106,7 @@ export default function Questions() {
     if (selectOption.techType) {
       fetchData();
     }
-    console.log('useeffect', selectOption);
   }, [selectOption]);
-  console.log('check', selectOption);
 
   const {
     data: techTypesResp,
@@ -251,7 +249,6 @@ export default function Questions() {
                       p={20}
                       key={q.id}
                     >
-                      {console.log('data-->', q)}
                       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                         <Box>
                           <ActionIcon
