@@ -42,7 +42,7 @@ const config = {
       renderer: (v) => `${v.scoreOutOf100Percent}%`,
     },
     {
-      display: '',
+      display: 'Operations',
       renderer: editDeleteRenderer,
     },
   ],

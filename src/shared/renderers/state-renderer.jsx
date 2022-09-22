@@ -8,7 +8,8 @@ const stateRenderer = ({ key }) => (obj) => {
   return (
     <ActionIcon
       variant="filled"
-      sx={{ backgroundColor: '#211c57', marginLeft: 'auto' }}
+      sx={{ backgroundColor: '#211c57' }}
+      // className="d-flex-all"
     >
       {obj[key] ? <IconCheck /> : <IconX />}
     </ActionIcon>

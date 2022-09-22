@@ -1,0 +1,32 @@
+.d-flex {
+  display: flex;
+}
+.justify-content-between {
+  justify-content: space-between !important;
+}
+.justify-content-flex {
+  justify-content: flex-end !important;
+}
+.justify-content-start {
+  justify-content: flex-start !important;
+}
+
+.d-flex-all {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+//mixin
+@mixin margin($unit) {
+  margin: $unit;
+}
+@mixin padding($unit) {
+  padding: $unit;
+}
+@mixin fontsize($unit) {
+  font-size: $unit;
+}
+@mixin radius($unit) {
+  border-radius: $unit;
+}

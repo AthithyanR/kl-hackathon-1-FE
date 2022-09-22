@@ -5,14 +5,16 @@ const editDeleteRenderer = (obj, handlers) => (
   <div style={{ display: 'flex' }}>
     <ActionIcon
       variant="filled"
-      sx={{ backgroundColor: '#211c57', marginLeft: 'auto' }}
+      sx={{ backgroundColor: '#211c57', marginRight: 20 }}
+      // className="d-flex-all"
       onClick={() => handlers.handleEdit && handlers.handleEdit(obj)}
     >
       <IconPencil />
     </ActionIcon>
     <ActionIcon
       variant="filled"
-      sx={{ backgroundColor: '#211c57', marginLeft: 'auto' }}
+      sx={{ backgroundColor: '#211c57' }}
+      // className="d-flex-all"
       onClick={() => handlers.handleDelete && handlers.handleDelete(obj)}
     >
       <IconTrash />
