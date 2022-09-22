@@ -25,8 +25,8 @@ const data = [
   {
     icon: IconBuildingSkyscraper,
     // color: 'blue',
-    label: 'Interview',
-    link: '/interview',
+    label: 'Assessment',
+    link: '/assessment',
   },
   {
     icon: IconZoomQuestion,

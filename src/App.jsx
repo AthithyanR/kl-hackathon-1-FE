@@ -15,7 +15,7 @@ import Login from './components/login';
 import NotFound from './components/not-found';
 import Main from './components/main';
 // import Questions from './components/questions';
-import Interview from './components/interview';
+import Assessment from './components/assessment';
 import Questions from './components/questions';
 import TechTypes from './components/settings/techTypes';
 
@@ -61,7 +61,7 @@ function App() {
               </Route>
               <Route element={<ProtectedRoute />}>
                 <Route path="/" element={<Main />}>
-                  <Route path="/interview" element={<Interview />} />
+                  <Route path="/assessment" element={<Assessment />} />
                   <Route path="/questions" element={<Questions />} />
                   <Route path="/tech-types" element={<TechTypes />} />
                 </Route>
