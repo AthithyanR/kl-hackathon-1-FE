@@ -22,7 +22,7 @@ export default function AuthenticationTitle() {
     {
       onSuccess: ({ data: token }) => {
         setToLs('token', token);
-        navigate('/interview', { replace: true });
+        navigate('/assessment', { replace: true });
       },
       onError: () => {
         showNotification({

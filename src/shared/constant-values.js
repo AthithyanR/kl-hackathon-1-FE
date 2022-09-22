@@ -1,6 +1,7 @@
 export const queryConstants = {
   questions: 'questions',
   techTypes: 'techTypes',
+  assessments: 'assessments',
 };
 
 export const dbMessageSnip = {
