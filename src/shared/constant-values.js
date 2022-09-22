@@ -1,4 +1,5 @@
 export const queryConstants = {
+  questions: 'questions',
   techTypes: 'techTypes',
 };
 
