@@ -88,8 +88,6 @@ body {
   width: 100%;
 }
 
-// linear-gradient(135deg,#ff5433 0%,#5689ff 100%)
-
 .login-wrapper {
   background-image: url("../assets/images/world-map.jpg");
   height: 100%;
@@ -148,4 +146,10 @@ body {
 .mantine-Paper-root{
   height: 100%;
   box-shadow: rgba(0, 0, 0, 0.2) 0px 18px 50px -10px;
+.error-title-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }

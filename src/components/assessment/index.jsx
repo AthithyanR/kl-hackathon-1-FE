@@ -2,26 +2,33 @@
 /* eslint-disable max-len */
 /* eslint-disable prefer-destructuring */
 import {
-  Avatar, Button, LoadingOverlay, Tabs, Title,
+  Avatar, Button, Card, Checkbox, LoadingOverlay, Tabs, Text, Title,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import React, { useState, useMemo, useEffect } from 'react';
 
 import Countdown from 'react-countdown';
+import { useNavigate } from 'react-router-dom';
 
 import Logo from '../../assets/Online-Assessment-Tool-kaaylabs.svg';
 import baseApi from '../../shared/api';
-import { queryConstants } from '../../shared/constant-values';
-import { generateQS, isEmpty } from '../../shared/utils';
+import { queryConstants, QUESTIONS_CACHE, questionTypes } from '../../shared/constant-values';
+import {
+  customLog,
+  generateQS, getFromLs, isEmpty, orderArrayBySample, setToLs,
+} from '../../shared/utils';
 
 import './client.scss';
 
 function Client() {
+  const navigate = useNavigate();
+
   const [endTime, setEndTime] = useState(null);
   const [activeTechTypeTab, setActiveTechTypeTab] = useState(null);
   const [questionTypeTabStatus, setQuestionTypeTabStatus] = useState({});
   const [questionStatus, setQuestionStatus] = useState({});
   const [questionData, setQuestionData] = useState({});
+  const [selectedOption, setSelectedOption] = useState(null);
 
   const {
     data: techTypesQuery,
@@ -29,9 +36,13 @@ function Client() {
     isError: isErrorTechTypes,
   } = useQuery([queryConstants.techTypes], () => baseApi.get('/techTypes'));
 
-  const sessionKey = new URLSearchParams(window.location.search).get(
-    'sessionKey',
-  );
+  const {
+    id: questionId, question, option1, option2, option3, option4,
+  } = questionData;
+
+  const searchParams = new URLSearchParams(window.location.search);
+  const sessionKey = searchParams.get('sessionKey');
+  const isCompleted = searchParams.get('isCompleted');
 
   const fetchAssessmentSessionMeta = () => baseApi.get(`/assessmentSession/meta?sessionKey=${encodeURI(sessionKey)}`);
 
@@ -63,29 +74,33 @@ function Client() {
     data: assessmentSessionQuery,
     isLoading,
     isError,
+    isFetched,
   } = useQuery([queryConstants.assessmentSession], fetchAssessmentSessionMeta, {
     onSuccess: handleFetchAssessmentSessionSuccess,
     enabled: !!techTypesQuery,
   });
 
+  const getSessionBasedParams = () => ({
+    sessionKey,
+    techTypeId: activeTechTypeTab,
+    questionType: questionTypeTabStatus[activeTechTypeTab],
+    questionNumber:
+      questionStatus[activeTechTypeTab][
+        questionTypeTabStatus[activeTechTypeTab]
+      ],
+  });
+
   const fetchQuestionData = async () => {
     try {
-      const queryParams = {
-        sessionKey,
-        techTypeId: activeTechTypeTab,
-        questionType: questionTypeTabStatus[activeTechTypeTab],
-        questionNumber:
-          questionStatus[activeTechTypeTab][
-            questionTypeTabStatus[activeTechTypeTab]
-          ],
-      };
+      const queryParams = getSessionBasedParams();
       const questionResponse = await baseApi.get(
         `/assessmentSession/question${generateQS(queryParams)}`,
       );
+      const questionsCache = getFromLs(QUESTIONS_CACHE) || {};
       setQuestionData(questionResponse.data || {});
-      // console.log(questionResponse, 'questionResponse');
+      setSelectedOption(questionsCache[`${activeTechTypeTab}//${questionResponse.data.id}`] || null);
     } catch (err) {
-      console.log('error on fetchQuestionData', fetchQuestionData);
+      customLog('error on fetchQuestionData', err);
     }
   };
 
@@ -95,12 +110,21 @@ function Client() {
       && !isEmpty(questionTypeTabStatus)
       && !isEmpty(questionStatus)
     ) {
+      setQuestionData({});
+      setSelectedOption(null);
       fetchQuestionData();
     }
   }, [activeTechTypeTab, questionTypeTabStatus, questionStatus]);
 
-  const handleComplete = () => {
-    console.log('completed');
+  const handleComplete = async () => {
+    try {
+      await baseApi.put(`/assessmentSession/complete${generateQS({ sessionKey })}`);
+      const { pathname } = window.location;
+      navigate(`${pathname}${generateQS({ sessionKey, isCompleted: 'true' })}`);
+      navigate(0);
+    } catch (err) {
+      customLog('error on handleOptionSelect', err);
+    }
   };
 
   const handleTechTypeTabChange = (newActiveTab) => {
@@ -119,6 +143,24 @@ function Client() {
     setQuestionStatus({ ...questionStatus });
   };
 
+  const handleOptionSelect = async (option) => {
+    if (option === selectedOption) return;
+    const questionsCache = getFromLs(QUESTIONS_CACHE) || {};
+    questionsCache[`${activeTechTypeTab}//${questionId}`] = option;
+    setToLs(QUESTIONS_CACHE, questionsCache);
+    setSelectedOption(option);
+
+    try {
+      const payload = {
+        ...getSessionBasedParams(),
+        chosenOption: option,
+      };
+      await baseApi.post('/assessmentSession/evaluateAnswer', payload);
+    } catch (err) {
+      customLog('error on handleOptionSelect', err);
+    }
+  };
+
   const session = assessmentSessionQuery?.data;
   const techTypes = techTypesQuery?.data;
 
@@ -130,37 +172,41 @@ function Client() {
     [techTypes],
   );
 
-  // console.log(
-  //   isLoading,
-  //   isLoadingTechTypes,
-  //   !activeTechTypeTab,
-  //   isEmpty(questionTypeTabStatus),
-  //   isEmpty(questionStatus),
-  // );
+  if (isCompleted) {
+    return (
+      <div className="error-title-container">
+        <Title>Submitted Successfully</Title>
+      </div>
+    );
+  }
 
-  console.log(questionData);
-
-  if (
-    isLoading
+  const loadingState = (isLoading
     || isLoadingTechTypes
     || !activeTechTypeTab
     || isEmpty(questionTypeTabStatus)
-    || isEmpty(questionStatus)
-  ) {
+    || isEmpty(questionStatus)) && !(isFetched && !session);
+
+  if (loadingState) {
     return <LoadingOverlay visible overlayBlur={2} />;
   }
 
   if (isErrorTechTypes || !techTypes) {
-    return <Title>Error Fetching Data</Title>;
+    return (
+      <div className="error-title-container">
+        <Title>Error Fetching Data</Title>
+      </div>
+    );
   }
 
   if (isError || !session) {
-    return <Title>Invalid Session</Title>;
+    return (
+      <div className="error-title-container">
+        <Title>Invalid Session</Title>
+      </div>
+    );
   }
 
   const { questionsMeta } = session;
-
-  // console.log(questionStatus ,);
 
   return (
     <div className="container">
@@ -169,8 +215,8 @@ function Client() {
           <Avatar radius={10} src={Logo} alt="Kaaylabs-MCQ" className="logo" />
         </div>
         <div className="right-content">
-          <div>
-            Remaining Time:
+          <div className="time-field">
+            Time Remaining:
             {' '}
             <Countdown
               date={endTime}
@@ -178,6 +224,9 @@ function Client() {
               zeroPadDays={1}
             />
           </div>
+          <Button onClick={handleComplete}>
+            Submit
+          </Button>
         </div>
       </div>
       <div className="body">
@@ -197,7 +246,7 @@ function Client() {
                 onTabChange={handleQuestionTypeTabChange}
               >
                 <Tabs.List>
-                  {Object.keys(questionsMeta[techTypeId]).map(
+                  {orderArrayBySample(Object.keys(questionsMeta[techTypeId]), questionTypes).map(
                     (questionType) => (
                       <Tabs.Tab key={questionType} value={questionType}>
                         {questionType}
@@ -223,6 +272,47 @@ function Client() {
                           {idx + 1}
                         </Button>
                       ))}
+                    <Card shadow="sm" mb={10} p={20}>
+                      <Text weight={500} size="md">
+                        {question}
+                      </Text>
+                      <Card style={{ display: 'flex' }}>
+                        <Checkbox
+                          checked={selectedOption === 'option 1'}
+                          onChange={() => handleOptionSelect('option 1')}
+                          mr={10}
+                        />
+                        {option1}
+                      </Card>
+                      <Card style={{ display: 'flex' }}>
+                        <Checkbox
+                          checked={selectedOption === 'option 2'}
+                          onChange={() => handleOptionSelect('option 2')}
+                          mr={10}
+                        />
+                        {option2}
+                      </Card>
+                      <Card style={{ display: 'flex' }}>
+                        <Checkbox
+                          checked={selectedOption === 'option 3'}
+                          onChange={() => handleOptionSelect('option 3')}
+                          mr={10}
+                        />
+                        {option3}
+                      </Card>
+                      {
+                        option4 && (
+                          <Card style={{ display: 'flex' }}>
+                            <Checkbox
+                              checked={selectedOption === 'option 4'}
+                              onChange={() => handleOptionSelect('option 4')}
+                              mr={10}
+                            />
+                            {option4}
+                          </Card>
+                        )
+                      }
+                    </Card>
                   </Tabs.Panel>
                 ))}
               </Tabs>
