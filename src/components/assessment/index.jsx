@@ -1,15 +1,18 @@
+/* eslint-disable react/no-array-index-key */
+/* eslint-disable max-len */
 /* eslint-disable prefer-destructuring */
 import {
   Avatar, Button, LoadingOverlay, Tabs, Title,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 import Countdown from 'react-countdown';
 
 import Logo from '../../assets/Online-Assessment-Tool-kaaylabs.svg';
 import baseApi from '../../shared/api';
 import { queryConstants } from '../../shared/constant-values';
+import { generateQS, isEmpty } from '../../shared/utils';
 
 import './client.scss';
 
@@ -18,12 +21,7 @@ function Client() {
   const [activeTechTypeTab, setActiveTechTypeTab] = useState(null);
   const [questionTypeTabStatus, setQuestionTypeTabStatus] = useState({});
   const [questionStatus, setQuestionStatus] = useState({});
-
-  // console.log({
-  //   activeTechTypeTab,
-  //   questionTypeTabStatus,
-  //   questionStatus,
-  // });
+  const [questionData, setQuestionData] = useState({});
 
   const {
     data: techTypesQuery,
@@ -31,42 +29,34 @@ function Client() {
     isError: isErrorTechTypes,
   } = useQuery([queryConstants.techTypes], () => baseApi.get('/techTypes'));
 
-  const fetchAssessmentSessionMeta = () => {
-    const sessionKey = new URLSearchParams(window.location.search).get(
-      'sessionKey',
-    );
-    return baseApi.get(
-      `/assessmentSession/meta?sessionKey=${encodeURI(sessionKey)}`,
-    );
-  };
+  const sessionKey = new URLSearchParams(window.location.search).get(
+    'sessionKey',
+  );
+
+  const fetchAssessmentSessionMeta = () => baseApi.get(`/assessmentSession/meta?sessionKey=${encodeURI(sessionKey)}`);
 
   const handleFetchAssessmentSessionSuccess = ({ data }) => {
     if (!data) return;
-    try {
-      const assumedStartTime = data.startTime
-        ? new Date(data.startTime)
-        : new Date();
-      setEndTime(
-        assumedStartTime.getTime() + data.timeAllowedInMins * 60 * 1000,
-      );
-      const allTechType = Object.keys(data.questionsMeta);
-      const initialActiveTechType = allTechType[0];
-      setActiveTechTypeTab(initialActiveTechType);
-      setQuestionTypeTabStatus(
-        allTechType.reduce((acc, cur) => {
-          acc[cur] = Object.keys(data.questionsMeta[cur])[0];
-          return acc;
-        }, {}),
-      );
-      setQuestionStatus(
-        allTechType.reduce((acc, cur) => {
-          acc[cur] = 0;
-          return acc;
-        }, {}),
-      );
-    } catch (e) {
-      console.log('error on handleFetchAssessmentSessionSuccess', e);
-    }
+    const { startTime, questionsMeta, timeAllowedInMins } = data;
+    const assumedStartTime = startTime ? new Date(startTime) : new Date();
+    setEndTime(assumedStartTime.getTime() + timeAllowedInMins * 60 * 1000);
+    const allTechType = Object.keys(questionsMeta);
+    const initialActiveTechType = allTechType[0];
+    const initialQuestionTypeTabStatus = {};
+    const initialQuestionStatus = {};
+
+    allTechType.forEach((techTypeId) => {
+      const questionTypeKeys = Object.keys(questionsMeta[techTypeId]);
+      initialQuestionTypeTabStatus[techTypeId] = questionTypeKeys[0];
+      initialQuestionStatus[techTypeId] = {};
+      questionTypeKeys.forEach((questionType) => {
+        initialQuestionStatus[techTypeId][questionType] = 1;
+      });
+    });
+
+    setActiveTechTypeTab(initialActiveTechType);
+    setQuestionTypeTabStatus(initialQuestionTypeTabStatus);
+    setQuestionStatus(initialQuestionStatus);
   };
 
   const {
@@ -77,6 +67,37 @@ function Client() {
     onSuccess: handleFetchAssessmentSessionSuccess,
     enabled: !!techTypesQuery,
   });
+
+  const fetchQuestionData = async () => {
+    try {
+      const queryParams = {
+        sessionKey,
+        techTypeId: activeTechTypeTab,
+        questionType: questionTypeTabStatus[activeTechTypeTab],
+        questionNumber:
+          questionStatus[activeTechTypeTab][
+            questionTypeTabStatus[activeTechTypeTab]
+          ],
+      };
+      const questionResponse = await baseApi.get(
+        `/assessmentSession/question${generateQS(queryParams)}`,
+      );
+      setQuestionData(questionResponse.data || {});
+      // console.log(questionResponse, 'questionResponse');
+    } catch (err) {
+      console.log('error on fetchQuestionData', fetchQuestionData);
+    }
+  };
+
+  useEffect(() => {
+    if (
+      activeTechTypeTab
+      && !isEmpty(questionTypeTabStatus)
+      && !isEmpty(questionStatus)
+    ) {
+      fetchQuestionData();
+    }
+  }, [activeTechTypeTab, questionTypeTabStatus, questionStatus]);
 
   const handleComplete = () => {
     console.log('completed');
@@ -91,6 +112,13 @@ function Client() {
     setQuestionTypeTabStatus({ ...questionTypeTabStatus });
   };
 
+  const handleActiveQuestionChange = (newActiveQuestion) => {
+    questionStatus[activeTechTypeTab][
+      questionTypeTabStatus[activeTechTypeTab]
+    ] = newActiveQuestion;
+    setQuestionStatus({ ...questionStatus });
+  };
+
   const session = assessmentSessionQuery?.data;
   const techTypes = techTypesQuery?.data;
 
@@ -102,7 +130,23 @@ function Client() {
     [techTypes],
   );
 
-  if (isLoading || isLoadingTechTypes) {
+  // console.log(
+  //   isLoading,
+  //   isLoadingTechTypes,
+  //   !activeTechTypeTab,
+  //   isEmpty(questionTypeTabStatus),
+  //   isEmpty(questionStatus),
+  // );
+
+  console.log(questionData);
+
+  if (
+    isLoading
+    || isLoadingTechTypes
+    || !activeTechTypeTab
+    || isEmpty(questionTypeTabStatus)
+    || isEmpty(questionStatus)
+  ) {
     return <LoadingOverlay visible overlayBlur={2} />;
   }
 
@@ -115,6 +159,8 @@ function Client() {
   }
 
   const { questionsMeta } = session;
+
+  // console.log(questionStatus ,);
 
   return (
     <div className="container">
@@ -138,12 +184,14 @@ function Client() {
         <Tabs value={activeTechTypeTab} onTabChange={handleTechTypeTabChange}>
           <Tabs.List>
             {Object.keys(questionsMeta).map((techTypeId) => (
-              <Tabs.Tab value={techTypeId}>{techTypeHash[techTypeId]}</Tabs.Tab>
+              <Tabs.Tab key={techTypeId} value={techTypeId}>
+                {techTypeHash[techTypeId]}
+              </Tabs.Tab>
             ))}
           </Tabs.List>
 
           {Object.keys(questionsMeta).map((techTypeId) => (
-            <Tabs.Panel value={techTypeId}>
+            <Tabs.Panel key={techTypeId} value={techTypeId}>
               <Tabs
                 value={questionTypeTabStatus[techTypeId]}
                 onTabChange={handleQuestionTypeTabChange}
@@ -151,16 +199,30 @@ function Client() {
                 <Tabs.List>
                   {Object.keys(questionsMeta[techTypeId]).map(
                     (questionType) => (
-                      <Tabs.Tab value={questionType}>{questionType}</Tabs.Tab>
+                      <Tabs.Tab key={questionType} value={questionType}>
+                        {questionType}
+                      </Tabs.Tab>
                     ),
                   )}
                 </Tabs.List>
 
                 {Object.keys(questionsMeta[techTypeId]).map((questionType) => (
-                  <Tabs.Panel value={questionType}>
+                  <Tabs.Panel key={questionType} value={questionType}>
                     {Array(questionsMeta[techTypeId][questionType])
                       .fill()
-                      .map((_, idx) => <Button style={{ backgroundColor: questionStatus[techTypeId] === idx ? 'black' : 'blue' }}>{idx + 1}</Button>)}
+                      .map((_, idx) => (
+                        <Button
+                          key={idx}
+                          className={
+                            questionStatus[techTypeId][questionType] === idx + 1
+                              ? 'active-question'
+                              : 'inactive-question'
+                          }
+                          onClick={() => handleActiveQuestionChange(idx + 1)}
+                        >
+                          {idx + 1}
+                        </Button>
+                      ))}
                   </Tabs.Panel>
                 ))}
               </Tabs>
