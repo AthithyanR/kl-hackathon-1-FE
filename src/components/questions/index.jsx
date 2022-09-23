@@ -15,9 +15,7 @@ import {
   Card,
   Text,
   Modal,
-  TextInput,
-  SegmentedControl,
-  Alert,
+  Group,
 } from '@mantine/core';
 import { IconPlaylistAdd, IconPencilPlus, IconTrash } from '@tabler/icons';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
@@ -77,15 +75,14 @@ const Item = forwardRef(({ label, image, ...others }, ref) => (
 
 export default function Questions() {
   const [opened, setOpened] = useState(false);
+  const [isOpenConfirm, setOpenConfirm] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [selectOption, setSelectOption] = useState({ questionType: questionTypes[0] });
-  const [techTypeOf, setTechTypeOf] = useState(null);
   const [modelKey, setModalKey] = useState('add');
   const [editObject, setEditObject] = useState({});
 
   const { questionType, techType } = selectOption;
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   const fetchData = async () => {
     try {
@@ -124,8 +121,6 @@ export default function Questions() {
     image: imgUrl,
   })) || [];
 
-  // setSelectOption(() => ({ ...selectOption, techType: techTypes[0]?.id }));
-
   const setSingleValue = (key, value) => {
     if (selectOption[key] === value) return;
     setSelectOption({ ...selectOption, [key]: value });
@@ -135,6 +130,11 @@ export default function Questions() {
     setOpened(visible);
     setModalKey(key);
     setEditObject(quiz);
+  };
+
+  const refetchData = async () => {
+    await fetchData();
+    setOpened(false);
   };
 
   const deleteMutation = useMutation(
@@ -154,21 +154,9 @@ export default function Questions() {
   );
 
   const handleDelete = (id) => {
-    <Alert title="Alert!" color="red">
-      Are You Sure Want to delete this question
-      <div>
-        <div>
-          <Button onClick={navigate('/questions')}>
-            cancel
-          </Button>
-        </div>
-        <div>
-          <Button onClick={() => deleteMutation.mutate(id)}>
-            ok
-          </Button>
-        </div>
-      </div>
-    </Alert>;
+    deleteMutation.mutate(id);
+    fetchData();
+    setOpenConfirm(false);
   };
 
   if (isLoadingTechTypes) {
@@ -187,6 +175,8 @@ export default function Questions() {
             Questions
           </Title>
         </Grid.Col>
+        {techType
+        && (
         <Grid.Col span={1}>
           <ActionIcon
             onClick={() => openModal('add', true)}
@@ -196,22 +186,26 @@ export default function Questions() {
             <IconPlaylistAdd size={24} />
           </ActionIcon>
         </Grid.Col>
+        )}
       </Grid>
       <Grid>
+        {opened && (
         <AddQuestion
+          techType={techType}
           modelKey={modelKey}
           opened={opened}
           questionType={questionType}
           setOpened={setOpened}
           editObject={editObject}
+          refetchData={refetchData}
         />
+        )}
       </Grid>
       <Grid justify="space-between">
         <Grid.Col span={4}>
           <Select
             label="Tech Types"
             data={techTypes}
-            // defaultValue={techTypes[1].id}
             valueComponent={option}
             itemComponent={Item}
             searchable
@@ -262,7 +256,7 @@ export default function Questions() {
                         <Box>
                           <ActionIcon
                             mr={5}
-                            onClick={() => handleDelete(q.id)}
+                            onClick={() => setOpenConfirm(true)}
                             variant="light"
                           >
                             <IconTrash />
@@ -287,6 +281,18 @@ export default function Questions() {
                       <Card>
                         {q.option4}
                       </Card>
+                      <Modal
+                        opened={isOpenConfirm}
+                        onClose={() => setOpenConfirm(false)}
+                        title="Do you want to delete this question?"
+                        closeOnClickOutside={false}
+                        overlayOpacity={0.1}
+                      >
+                        <Group spacing="lg" float="left">
+                          <Button onClick={() => setOpenConfirm(false)}>Cancel</Button>
+                          <Button color="red" onClick={() => handleDelete(q.id)}>Delete</Button>
+                        </Group>
+                      </Modal>
                     </Card>
                   ))}
               </Grid.Col>

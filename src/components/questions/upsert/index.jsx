@@ -5,60 +5,56 @@ import React, { useState, useEffect } from 'react';
 import {
   Title, Grid, Modal, Textarea, LoadingOverlay, Group, Button, Card, Text, Checkbox, Input, NumberInput, TextInput,
 } from '@mantine/core';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { showNotification } from '@mantine/notifications';
 import { useForm } from '@mantine/form';
-import { queryConstants } from '../../../shared/constant-values';
 import baseApi from '../../../shared/api';
 import './upsert.scss';
 
 export default function AddQuestion(props) {
   const {
-    opened, setOpened, modelKey, editObject,
+    opened, setOpened, modelKey, techType, questionType, editObject, refetchData,
   } = props;
-  const [editId, setEditId] = useState(null);
-  const [addQuest, setAddQuest] = useState('');
-  let init = {
-    question: '',
-    option1: '',
-    option2: '',
-    option3: '',
-    option4: '',
-    correctoption: '',
-  };
-  useEffect(() => {
-    if (modelKey === 'edit') {
-      init = {
-        questionType: editObject.questionType,
-        question: editObject.question,
-        option1: editObject.option1,
-        option2: editObject.option2,
-        option3: editObject.option3,
-        option4: editObject.option4,
-        correctOption: editObject.option,
-      };
-    }
-  });
-  const queryClient = useQueryClient();
   const form = useForm({
-    initialValues: init,
+    initialValues: modelKey === 'edit' ? {
+      question: editObject?.question,
+      option1: editObject?.option1,
+      option2: editObject?.option2,
+      option3: editObject?.option3,
+      option4: editObject?.option4,
+      correctoption: editObject?.correctOption,
+    } : {
+      question: '',
+      option1: '',
+      option2: '',
+      option3: '',
+      option4: '',
+      correctoption: '',
+    },
     validate: {
       question: (Value) => (Value.length > 0 ? null : 'Please Enter Question'),
-      option1: (Value) => (Value.length > 0 ? null : 'Please Enter Options'),
-      option2: (Value) => (Value.length > 0 ? null : 'Please Enter Options'),
-      option3: (Value) => (Value.length > 0 ? null : 'Please Enter Options'),
+      option1: (Value) => (Value.length > 0 ? null : 'Please Enter Options 1'),
+      option2: (Value) => (Value.length > 0 ? null : 'Please Enter Options 2'),
+      option3: (Value) => (Value.length > 0 ? null : 'Please Enter Options 3'),
       correctoption: (Value) => (Value.length > 0 ? null : 'Please Enter Currect Option'),
     },
 
   });
 
   const addMutation = useMutation(
-    (payload) => baseApi.post('/questions', [payload]),
+    (payload) => baseApi.post('/questions', [{
+      ...payload,
+      techTypeId: techType,
+      questionType,
+    }]),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries([queryConstants.questions]);
         form.reset();
-        setOpened(false);
+        refetchData();
+        showNotification({
+          title: '',
+          message: 'Add Successfully',
+        });
       },
       onError: () => {
         showNotification({
@@ -70,12 +66,20 @@ export default function AddQuestion(props) {
   );
 
   const updateMutation = useMutation(
-    (payload) => baseApi.put('/questions', [payload]),
+    (payload) => baseApi.put('/questions', [{
+      ...payload,
+      id: editObject.id,
+      techTypeId: editObject.techTypeId,
+      questionType: editObject.questionType,
+    }]),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries([queryConstants.questions]);
         form.reset();
-        setOpened(false);
+        refetchData();
+        showNotification({
+          title: '',
+          message: 'Updated Successfully',
+        });
       },
       onError: () => {
         showNotification({
@@ -90,19 +94,17 @@ export default function AddQuestion(props) {
     setOpened(false);
     form.reset();
   };
+
   return (
     <Modal
-      title="Add Question"
+      title={`${modelKey === 'add' ? 'Add' : 'Edit'} Question`}
       opened={opened}
       size="80%"
-      // fullScreen
       onClose={() => onCloseModal()}
       closeOnClickOutside={false}
     >
       <form
-        onSubmit={form.onSubmit(
-          editId ? updateMutation.mutate : addMutation.mutate,
-        )}
+        onSubmit={form.onSubmit(modelKey === 'add' ? addMutation.mutate : updateMutation.mutate)}
       >
         <Grid>
           <Grid.Col
@@ -126,7 +128,6 @@ export default function AddQuestion(props) {
                       size="sm"
                       {...form.getInputProps('option1')}
                       withAsterisk
-                      addQuest={setAddQuest}
                     />
                   </div>
                   <div style={{ width: '48%' }}>
@@ -157,6 +158,7 @@ export default function AddQuestion(props) {
                       placeholder="Option 4"
                       radius="sm"
                       size="sm"
+                      {...form.getInputProps('option4')}
                     />
                   </div>
                 </div>
@@ -185,7 +187,7 @@ export default function AddQuestion(props) {
                 type="submit"
                 loading={addMutation.isLoading}
               >
-                Add
+                {modelKey === 'add' ? 'Save' : 'Update'}
               </Button>
             </Grid.Col>
           </Grid.Col>
