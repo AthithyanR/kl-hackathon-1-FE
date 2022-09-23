@@ -56,7 +56,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <MantineProvider withNormalizeCSS withGlobalStyles>
         <NotificationsProvider>
-          <Suspense fallback={<LoadingOverlay visible overlayBlur={2} />}>
+          <Suspense fallback={<LoadingOverlay visible overlayBlur={2} loaderProps={{ color: 'violet', size: 'xl', variant: 'dots' }} />}>
             <BrowserRouter>
               <Routes>
                 <Route path="/assessment" element={<Assessment />} />

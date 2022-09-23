@@ -157,7 +157,7 @@ export default function Questions() {
   };
 
   if (isLoadingTechTypes) {
-    return <LoadingOverlay visible overlayBlur={2} />;
+    return <LoadingOverlay visible overlayBlur={2} loaderProps={{ color: 'violet', size: 'xl', variant: 'dots' }} />;
   }
 
   if (isErrorTechTypes) {
@@ -205,6 +205,8 @@ export default function Questions() {
             data={techTypes}
             valueComponent={option}
             itemComponent={Item}
+            transitionDuration={250}
+            transition="pop"
             searchable
             size="md"
             onChange={(e) => setSingleValue('techType', e)}
@@ -246,6 +248,7 @@ export default function Questions() {
                             mr={5}
                             onClick={() => openModal('edit', true, q)}
                             variant="light"
+                            // onClick={openModal(q.id)}
                           >
                             <IconPencilPlus />
                           </ActionIcon>
