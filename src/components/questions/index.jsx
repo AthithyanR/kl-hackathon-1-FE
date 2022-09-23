@@ -19,13 +19,10 @@ import {
 } from '@mantine/core';
 import { IconPlaylistAdd, IconPencilPlus, IconTrash } from '@tabler/icons';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { useForm } from '@mantine/form';
 import { showNotification } from '@mantine/notifications';
-import { useNavigate } from 'react-router-dom';
 import AddQuestion from './upsert';
 import { queryConstants, questionTypes, dbMessageSnip } from '../../shared/constant-values';
 import baseApi from '../../shared/api';
-import { generateQS, isEmpty } from '../../shared/utils';
 import './upsert/upsert.scss';
 
 const option = ({

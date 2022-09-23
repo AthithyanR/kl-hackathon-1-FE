@@ -23,3 +23,20 @@ export function isEmpty(o) {
   }
   return true;
 }
+
+export function customLog(...values) {
+  // eslint-disable-next-line no-console
+  console.log(...values);
+}
+
+export function orderArrayBySample(arr, sampleArr) {
+  const result = [];
+  for (const sample of sampleArr) {
+    for (const value of arr) {
+      if (sample === value) {
+        result.push(value);
+      }
+    }
+  }
+  return result;
+}

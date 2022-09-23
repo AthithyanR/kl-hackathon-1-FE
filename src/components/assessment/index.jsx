@@ -1,29 +1,34 @@
+/* eslint-disable react/no-array-index-key */
+/* eslint-disable max-len */
 /* eslint-disable prefer-destructuring */
 import {
-  Avatar, Button, LoadingOverlay, Tabs, Title,
+  Avatar, Button, Card, Checkbox, LoadingOverlay, Tabs, Text, Title,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 import Countdown from 'react-countdown';
+import { useNavigate } from 'react-router-dom';
 
 import Logo from '../../assets/Online-Assessment-Tool-kaaylabs.svg';
 import baseApi from '../../shared/api';
-import { queryConstants } from '../../shared/constant-values';
+import { queryConstants, QUESTIONS_CACHE, questionTypes } from '../../shared/constant-values';
+import {
+  customLog,
+  generateQS, getFromLs, isEmpty, orderArrayBySample, setToLs,
+} from '../../shared/utils';
 
 import './client.scss';
 
 function Client() {
+  const navigate = useNavigate();
+
   const [endTime, setEndTime] = useState(null);
   const [activeTechTypeTab, setActiveTechTypeTab] = useState(null);
   const [questionTypeTabStatus, setQuestionTypeTabStatus] = useState({});
   const [questionStatus, setQuestionStatus] = useState({});
-
-  // console.log({
-  //   activeTechTypeTab,
-  //   questionTypeTabStatus,
-  //   questionStatus,
-  // });
+  const [questionData, setQuestionData] = useState({});
+  const [selectedOption, setSelectedOption] = useState(null);
 
   const {
     data: techTypesQuery,
@@ -31,55 +36,95 @@ function Client() {
     isError: isErrorTechTypes,
   } = useQuery([queryConstants.techTypes], () => baseApi.get('/techTypes'));
 
-  const fetchAssessmentSessionMeta = () => {
-    const sessionKey = new URLSearchParams(window.location.search).get(
-      'sessionKey',
-    );
-    return baseApi.get(
-      `/assessmentSession/meta?sessionKey=${encodeURI(sessionKey)}`,
-    );
-  };
+  const {
+    id: questionId, question, option1, option2, option3, option4,
+  } = questionData;
+
+  const searchParams = new URLSearchParams(window.location.search);
+  const sessionKey = searchParams.get('sessionKey');
+  const isCompleted = searchParams.get('isCompleted');
+
+  const fetchAssessmentSessionMeta = () => baseApi.get(`/assessmentSession/meta?sessionKey=${encodeURI(sessionKey)}`);
 
   const handleFetchAssessmentSessionSuccess = ({ data }) => {
     if (!data) return;
-    try {
-      const assumedStartTime = data.startTime
-        ? new Date(data.startTime)
-        : new Date();
-      setEndTime(
-        assumedStartTime.getTime() + data.timeAllowedInMins * 60 * 1000,
-      );
-      const allTechType = Object.keys(data.questionsMeta);
-      const initialActiveTechType = allTechType[0];
-      setActiveTechTypeTab(initialActiveTechType);
-      setQuestionTypeTabStatus(
-        allTechType.reduce((acc, cur) => {
-          acc[cur] = Object.keys(data.questionsMeta[cur])[0];
-          return acc;
-        }, {}),
-      );
-      setQuestionStatus(
-        allTechType.reduce((acc, cur) => {
-          acc[cur] = 0;
-          return acc;
-        }, {}),
-      );
-    } catch (e) {
-      console.log('error on handleFetchAssessmentSessionSuccess', e);
-    }
+    const { startTime, questionsMeta, timeAllowedInMins } = data;
+    const assumedStartTime = startTime ? new Date(startTime) : new Date();
+    setEndTime(assumedStartTime.getTime() + timeAllowedInMins * 60 * 1000);
+    const allTechType = Object.keys(questionsMeta);
+    const initialActiveTechType = allTechType[0];
+    const initialQuestionTypeTabStatus = {};
+    const initialQuestionStatus = {};
+
+    allTechType.forEach((techTypeId) => {
+      const questionTypeKeys = Object.keys(questionsMeta[techTypeId]);
+      initialQuestionTypeTabStatus[techTypeId] = questionTypeKeys[0];
+      initialQuestionStatus[techTypeId] = {};
+      questionTypeKeys.forEach((questionType) => {
+        initialQuestionStatus[techTypeId][questionType] = 1;
+      });
+    });
+
+    setActiveTechTypeTab(initialActiveTechType);
+    setQuestionTypeTabStatus(initialQuestionTypeTabStatus);
+    setQuestionStatus(initialQuestionStatus);
   };
 
   const {
     data: assessmentSessionQuery,
     isLoading,
     isError,
+    isFetched,
   } = useQuery([queryConstants.assessmentSession], fetchAssessmentSessionMeta, {
     onSuccess: handleFetchAssessmentSessionSuccess,
     enabled: !!techTypesQuery,
   });
 
-  const handleComplete = () => {
-    console.log('completed');
+  const getSessionBasedParams = () => ({
+    sessionKey,
+    techTypeId: activeTechTypeTab,
+    questionType: questionTypeTabStatus[activeTechTypeTab],
+    questionNumber:
+      questionStatus[activeTechTypeTab][
+        questionTypeTabStatus[activeTechTypeTab]
+      ],
+  });
+
+  const fetchQuestionData = async () => {
+    try {
+      const queryParams = getSessionBasedParams();
+      const questionResponse = await baseApi.get(
+        `/assessmentSession/question${generateQS(queryParams)}`,
+      );
+      const questionsCache = getFromLs(QUESTIONS_CACHE) || {};
+      setQuestionData(questionResponse.data || {});
+      setSelectedOption(questionsCache[`${activeTechTypeTab}//${questionResponse.data.id}`] || null);
+    } catch (err) {
+      customLog('error on fetchQuestionData', err);
+    }
+  };
+
+  useEffect(() => {
+    if (
+      activeTechTypeTab
+      && !isEmpty(questionTypeTabStatus)
+      && !isEmpty(questionStatus)
+    ) {
+      setQuestionData({});
+      setSelectedOption(null);
+      fetchQuestionData();
+    }
+  }, [activeTechTypeTab, questionTypeTabStatus, questionStatus]);
+
+  const handleComplete = async () => {
+    try {
+      await baseApi.put(`/assessmentSession/complete${generateQS({ sessionKey })}`);
+      const { pathname } = window.location;
+      navigate(`${pathname}${generateQS({ sessionKey, isCompleted: 'true' })}`);
+      navigate(0);
+    } catch (err) {
+      customLog('error on handleOptionSelect', err);
+    }
   };
 
   const handleTechTypeTabChange = (newActiveTab) => {
@@ -89,6 +134,31 @@ function Client() {
   const handleQuestionTypeTabChange = (newActiveTab) => {
     questionTypeTabStatus[activeTechTypeTab] = newActiveTab;
     setQuestionTypeTabStatus({ ...questionTypeTabStatus });
+  };
+
+  const handleActiveQuestionChange = (newActiveQuestion) => {
+    questionStatus[activeTechTypeTab][
+      questionTypeTabStatus[activeTechTypeTab]
+    ] = newActiveQuestion;
+    setQuestionStatus({ ...questionStatus });
+  };
+
+  const handleOptionSelect = async (option) => {
+    if (option === selectedOption) return;
+    const questionsCache = getFromLs(QUESTIONS_CACHE) || {};
+    questionsCache[`${activeTechTypeTab}//${questionId}`] = option;
+    setToLs(QUESTIONS_CACHE, questionsCache);
+    setSelectedOption(option);
+
+    try {
+      const payload = {
+        ...getSessionBasedParams(),
+        chosenOption: option,
+      };
+      await baseApi.post('/assessmentSession/evaluateAnswer', payload);
+    } catch (err) {
+      customLog('error on handleOptionSelect', err);
+    }
   };
 
   const session = assessmentSessionQuery?.data;
@@ -102,16 +172,38 @@ function Client() {
     [techTypes],
   );
 
-  if (isLoading || isLoadingTechTypes) {
+  if (isCompleted) {
+    return (
+      <div className="error-title-container">
+        <Title>Submitted Successfully</Title>
+      </div>
+    );
+  }
+
+  const loadingState = (isLoading
+    || isLoadingTechTypes
+    || !activeTechTypeTab
+    || isEmpty(questionTypeTabStatus)
+    || isEmpty(questionStatus)) && !(isFetched && !session);
+
+  if (loadingState) {
     return <LoadingOverlay visible overlayBlur={2} />;
   }
 
   if (isErrorTechTypes || !techTypes) {
-    return <Title>Error Fetching Data</Title>;
+    return (
+      <div className="error-title-container">
+        <Title>Error Fetching Data</Title>
+      </div>
+    );
   }
 
   if (isError || !session) {
-    return <Title>Invalid Session</Title>;
+    return (
+      <div className="error-title-container">
+        <Title>Invalid Session</Title>
+      </div>
+    );
   }
 
   const { questionsMeta } = session;
@@ -123,8 +215,8 @@ function Client() {
           <Avatar radius={10} src={Logo} alt="Kaaylabs-MCQ" className="logo" />
         </div>
         <div className="right-content">
-          <div>
-            Remaining Time:
+          <div className="time-field">
+            Time Remaining:
             {' '}
             <Countdown
               date={endTime}
@@ -132,35 +224,102 @@ function Client() {
               zeroPadDays={1}
             />
           </div>
+          <Button onClick={handleComplete}>
+            Submit
+          </Button>
         </div>
       </div>
-      <div className="body">
+      <div className="assessment-body">
         <Tabs value={activeTechTypeTab} onTabChange={handleTechTypeTabChange}>
           <Tabs.List>
             {Object.keys(questionsMeta).map((techTypeId) => (
-              <Tabs.Tab value={techTypeId}>{techTypeHash[techTypeId]}</Tabs.Tab>
+              <Tabs.Tab
+                key={techTypeId}
+                value={techTypeId}
+              >
+                {techTypeHash[techTypeId]}
+              </Tabs.Tab>
             ))}
           </Tabs.List>
 
           {Object.keys(questionsMeta).map((techTypeId) => (
-            <Tabs.Panel value={techTypeId}>
+            <Tabs.Panel key={techTypeId} value={techTypeId}>
               <Tabs
                 value={questionTypeTabStatus[techTypeId]}
                 onTabChange={handleQuestionTypeTabChange}
               >
                 <Tabs.List>
-                  {Object.keys(questionsMeta[techTypeId]).map(
+                  {orderArrayBySample(Object.keys(questionsMeta[techTypeId]), questionTypes).map(
                     (questionType) => (
-                      <Tabs.Tab value={questionType}>{questionType}</Tabs.Tab>
+                      <Tabs.Tab
+                        key={questionType}
+                        value={questionType}
+                        // className={questionsMeta[techTypeId] === questionType && 'active-tab'}
+                      >
+                        {questionType}
+                      </Tabs.Tab>
                     ),
                   )}
                 </Tabs.List>
 
                 {Object.keys(questionsMeta[techTypeId]).map((questionType) => (
-                  <Tabs.Panel value={questionType}>
+                  <Tabs.Panel key={questionType} value={questionType}>
                     {Array(questionsMeta[techTypeId][questionType])
                       .fill()
-                      .map((_, idx) => <Button style={{ backgroundColor: questionStatus[techTypeId] === idx ? 'black' : 'blue' }}>{idx + 1}</Button>)}
+                      .map((_, idx) => (
+                        <Button
+                          key={idx}
+                          className={
+                            questionStatus[techTypeId][questionType] === idx + 1
+                              ? 'active-question'
+                              : 'inactive-question'
+                          }
+                          onClick={() => handleActiveQuestionChange(idx + 1)}
+                        >
+                          {idx + 1}
+                        </Button>
+                      ))}
+                    <Card shadow="sm" mb={10} p={20}>
+                      <Text weight={500} size="md">
+                        {question}
+                      </Text>
+                      <Card style={{ display: 'flex' }}>
+                        <Checkbox
+                          checked={selectedOption === 'option 1'}
+                          onChange={() => handleOptionSelect('option 1')}
+                          mr={10}
+                        />
+                        {option1}
+                      </Card>
+                      <Card style={{ display: 'flex' }}>
+                        <Checkbox
+                          checked={selectedOption === 'option 2'}
+                          onChange={() => handleOptionSelect('option 2')}
+                          mr={10}
+                        />
+                        {option2}
+                      </Card>
+                      <Card style={{ display: 'flex' }}>
+                        <Checkbox
+                          checked={selectedOption === 'option 3'}
+                          onChange={() => handleOptionSelect('option 3')}
+                          mr={10}
+                        />
+                        {option3}
+                      </Card>
+                      {
+                        option4 && (
+                          <Card style={{ display: 'flex' }}>
+                            <Checkbox
+                              checked={selectedOption === 'option 4'}
+                              onChange={() => handleOptionSelect('option 4')}
+                              mr={10}
+                            />
+                            {option4}
+                          </Card>
+                        )
+                      }
+                    </Card>
                   </Tabs.Panel>
                 ))}
               </Tabs>
