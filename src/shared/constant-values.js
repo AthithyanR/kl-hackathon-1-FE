@@ -2,6 +2,7 @@ export const queryConstants = {
   questions: 'questions',
   techTypes: 'techTypes',
   assessments: 'assessments',
+  assessmentSession: 'assessmentSession',
 };
 
 export const dbMessageSnip = {
@@ -15,5 +16,7 @@ export const questionTypes = [
 ];
 
 export const emailRegExp = 'https?://(www.)?[-a-zA-Z0-9@:%._+~#=]{1,256}.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)';
+
+export const TOKEN_NAME = 'kl-oat-token';
 
 export default {};

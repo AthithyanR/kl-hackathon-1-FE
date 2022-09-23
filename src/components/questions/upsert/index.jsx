@@ -104,7 +104,7 @@ export default function AddQuestion(props) {
           editId ? updateMutation.mutate : addMutation.mutate,
         )}
       >
-        <Grid className="schedule-interview-model-content">
+        <Grid>
           <Grid.Col
             mt={10}
           >

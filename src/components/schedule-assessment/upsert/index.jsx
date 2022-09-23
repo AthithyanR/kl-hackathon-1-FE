@@ -46,7 +46,7 @@ const onChangeObject = (editOption) => {
   };
 };
 
-export default function AddInterview(props) {
+export default function UpsertAssessment(props) {
   const {
     option, opened, setOpened, editOption,
   } = props;
@@ -69,7 +69,7 @@ export default function AddInterview(props) {
   const [questions, setQuestions] = useState([]);
   const [selectOption, setSelectOption] = useState(initSelectOption);
   const [questionSelection, setQuesionSelection] = useState(quizInfo);
-  const [interviewParams, setInterviewParams] = useState(initParams);
+  const [assessmentParams, setAssessmentParams] = useState(initParams);
   const [emailError, setEmailError] = useState(false);
   const [isErrorMessage, setIsErrorMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState(false);
@@ -152,7 +152,7 @@ export default function AddInterview(props) {
     setSelectOption({ questionType: questionTypes[0] });
     setSelectedTechGroup([]);
     setQuestions([]);
-    setInterviewParams({ candidateEmails: [], randomCount: null, timeAllowedInMins: 60 });
+    setAssessmentParams({ candidateEmails: [], randomCount: null, timeAllowedInMins: 60 });
     setQuesionSelection({});
     setSelectedTechIds([]);
   };
@@ -177,7 +177,7 @@ export default function AddInterview(props) {
         .filter((id) => id !== e);
     }
     setQuesionSelection({ ...questionSelection });
-    setInterviewParams((prev) => ({
+    setAssessmentParams((prev) => ({
       ...prev,
       randomCount: isEmpty(questionSelection) ? null : questionSelection,
     }));
@@ -185,11 +185,11 @@ export default function AddInterview(props) {
 
   useEffect(() => {
     if (isErrorMessage) {
-      const { isErrorMesg, currentErrorMessage } = checkError(interviewParams);
+      const { isErrorMesg, currentErrorMessage } = checkError(assessmentParams);
       setIsErrorMessage(isErrorMesg);
       setErrorMessage(currentErrorMessage);
     }
-  }, [interviewParams]);
+  }, [assessmentParams]);
 
   const checkError = (params) => {
     const error = [];
@@ -215,11 +215,11 @@ export default function AddInterview(props) {
     } else {
       questionSelection[selectOption.techType][selectOption.questionType] = Number(e);
     }
-    setInterviewParams((prev) => ({ ...prev, randomCount: e }));
+    setAssessmentParams((prev) => ({ ...prev, randomCount: e }));
   };
 
   const doSubmit = async () => {
-    const { timeAllowedInMins, emails } = interviewParams;
+    const { timeAllowedInMins, emails } = assessmentParams;
     const quizData = {};
     try {
       if (!isEmpty(questionSelection)) {
@@ -292,7 +292,7 @@ export default function AddInterview(props) {
   };
 
   const handleSubmit = () => {
-    const { isErrorMesg, currentErrorMessage } = checkError(interviewParams);
+    const { isErrorMesg, currentErrorMessage } = checkError(assessmentParams);
     if (!isErrorMesg) {
       if (!emailError) {
         doSubmit();
@@ -326,7 +326,7 @@ export default function AddInterview(props) {
         setEmailError(false);
       }
     });
-    setInterviewParams((prev) => ({ ...prev, candidateEmails: value, emails }));
+    setAssessmentParams((prev) => ({ ...prev, candidateEmails: value, emails }));
   };
 
   return (
@@ -453,9 +453,9 @@ export default function AddInterview(props) {
                 icon={<IconAt />}
                 placeholder="Enter The Email Id"
                 radius="md"
-                value={interviewParams.candidateEmail}
+                value={assessmentParams.candidateEmail}
                 disabled={option === 'Edit'}
-                onChange={(e) => setInterviewParams((prev) => ({ ...prev, emailId: e.target.value }))}
+                onChange={(e) => setAssessmentParams((prev) => ({ ...prev, emailId: e.target.value }))}
                 onBlur={(e) => checkEmail(e)}
                 invalid={emailError}
               />
@@ -467,9 +467,9 @@ export default function AddInterview(props) {
               <NumberInput
                 placeholder="Enter the Allowed Duration"
                 radius="md"
-                value={interviewParams.timeAllowedInMins}
+                value={assessmentParams.timeAllowedInMins}
                 hideControls
-                onChange={(e) => setInterviewParams((prev) => ({ ...prev, timeAllowedInMins: e }))}
+                onChange={(e) => setAssessmentParams((prev) => ({ ...prev, timeAllowedInMins: e }))}
               />
             </Grid.Col>
             <Grid.Col

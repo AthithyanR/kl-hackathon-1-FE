@@ -14,12 +14,14 @@ import { getFromLs } from './shared/utils';
 import NotFound from './components/not-found';
 
 import './styles/index.scss';
+import { TOKEN_NAME } from './shared/constant-values';
 
 const Login = React.lazy(() => import('./components/login'));
 const Main = React.lazy(() => import('./components/main'));
-const Assessment = React.lazy(() => import('./components/assessment'));
+const ScheduleAssessment = React.lazy(() => import('./components/schedule-assessment'));
 const Questions = React.lazy(() => import('./components/questions'));
 const TechTypes = React.lazy(() => import('./components/settings/techTypes'));
+const Assessment = React.lazy(() => import('./components/assessment'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,7 +34,7 @@ const queryClient = new QueryClient({
 });
 
 function ProtectedRoute() {
-  const token = getFromLs('token');
+  const token = getFromLs(TOKEN_NAME);
 
   if (!token) {
     return <Navigate to="/login" replace />;
@@ -41,7 +43,7 @@ function ProtectedRoute() {
 }
 
 function UnProtectedRoute() {
-  const token = getFromLs('token');
+  const token = getFromLs(TOKEN_NAME);
 
   if (token) {
     return <Navigate to="/" replace />;
@@ -57,12 +59,13 @@ function App() {
           <Suspense fallback={<LoadingOverlay visible overlayBlur={2} />}>
             <BrowserRouter>
               <Routes>
+                <Route path="/assessment" element={<Assessment />} />
                 <Route element={<UnProtectedRoute />}>
                   <Route path="/login" element={<Login />} />
                 </Route>
                 <Route element={<ProtectedRoute />}>
                   <Route path="/" element={<Main />}>
-                    <Route path="/assessment" element={<Assessment />} />
+                    <Route path="/schedule-assessment" element={<ScheduleAssessment />} />
                     <Route path="/questions" element={<Questions />} />
                     <Route path="/tech-types" element={<TechTypes />} />
                   </Route>

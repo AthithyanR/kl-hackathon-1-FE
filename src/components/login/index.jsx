@@ -14,6 +14,7 @@ import { showNotification } from '@mantine/notifications';
 
 import baseApi from '../../shared/api';
 import { setToLs } from '../../shared/utils';
+import { TOKEN_NAME } from '../../shared/constant-values';
 
 export default function AuthenticationTitle() {
   const navigate = useNavigate();
@@ -21,8 +22,8 @@ export default function AuthenticationTitle() {
     (payload) => baseApi.post('/authenticate', payload),
     {
       onSuccess: ({ data: token }) => {
-        setToLs('token', token);
-        navigate('/assessment', { replace: true });
+        setToLs(TOKEN_NAME, token);
+        navigate('/schedule-assessment', { replace: true });
       },
       onError: () => {
         showNotification({

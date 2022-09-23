@@ -26,7 +26,7 @@ const data = [
     icon: IconBuildingSkyscraper,
     // color: 'blue',
     label: 'Assessment',
-    link: '/assessment',
+    link: '/schedule-assessment',
   },
   {
     icon: IconZoomQuestion,
@@ -43,7 +43,7 @@ const data = [
 ];
 
 function MainLinks() {
-  const [active, setActive] = useState('/interview');
+  const [active, setActive] = useState('/schedule-assessment');
   const links = data.map((item) => (
     <MainLink
       active={active}

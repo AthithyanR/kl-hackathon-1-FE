@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import axios from 'axios';
+import { TOKEN_NAME } from './constant-values';
 import { flushLs, getFromLs } from './utils';
 
 const baseApi = axios.create({
@@ -14,7 +15,7 @@ const baseApi = axios.create({
 // req interceptor
 baseApi.interceptors.request.use((config) => {
   Object.assign(config, { url: `/api${config.url}` });
-  Object.assign(config.headers, { Authorization: `Bearer ${getFromLs('token')}` });
+  Object.assign(config.headers, { Authorization: `Bearer ${getFromLs(TOKEN_NAME)}` });
   return config;
 }, (error) => {
   console.error('Api request error happened :-(', error);

@@ -14,11 +14,11 @@ const config = {
       renderer: (v) => (v.timeAllowedInMins > 60 ? `${(v.timeAllowedInMins / 60).toFixed(2)} hrs` : `${v.timeAllowedInMins} mins`),
     },
     {
-      display: 'Interview Started',
+      display: 'Assessment Session Started',
       renderer: stateRenderer({ key: 'startTime' }),
     },
     {
-      display: 'Interview Completed',
+      display: 'Assessment Session Completed',
       renderer: stateRenderer({ key: 'endTime' }),
     },
     {

@@ -1,105 +1,175 @@
-import React, { useState, useMemo, useCallback } from 'react';
+/* eslint-disable prefer-destructuring */
 import {
-  ActionIcon, Grid, LoadingOverlay, Paper, Title,
+  Avatar, Button, LoadingOverlay, Tabs, Title,
 } from '@mantine/core';
-import { IconPlaylistAdd } from '@tabler/icons';
 import { useQuery } from '@tanstack/react-query';
+import React, { useState, useMemo } from 'react';
 
-import { showNotification } from '@mantine/notifications';
-import UpsertInterview from './upsert';
-import { queryConstants } from '../../shared/constant-values';
+import Countdown from 'react-countdown';
+
+import Logo from '../../assets/Online-Assessment-Tool-kaaylabs.svg';
 import baseApi from '../../shared/api';
-import TableComponent from '../../shared/components/table';
-import tableConfig from '../../shared/meta-data/table/assessment';
+import { queryConstants } from '../../shared/constant-values';
 
-export default function Interview() {
-  const [opened, setOpened] = useState(false);
-  const [editOption, setEditOption] = useState({});
-  const [key, setKey] = useState('Add');
+import './client.scss';
+
+function Client() {
+  const [endTime, setEndTime] = useState(null);
+  const [activeTechTypeTab, setActiveTechTypeTab] = useState(null);
+  const [questionTypeTabStatus, setQuestionTypeTabStatus] = useState({});
+  const [questionStatus, setQuestionStatus] = useState({});
+
+  // console.log({
+  //   activeTechTypeTab,
+  //   questionTypeTabStatus,
+  //   questionStatus,
+  // });
+
   const {
-    data: assessmentSessionQuery, isLoading, isError, refetch,
-  } = useQuery(
-    [queryConstants.assessments],
-    () => baseApi.get('/assessmentSession'),
-  );
+    data: techTypesQuery,
+    isLoading: isLoadingTechTypes,
+    isError: isErrorTechTypes,
+  } = useQuery([queryConstants.techTypes], () => baseApi.get('/techTypes'));
 
-  const assessmentSessions = assessmentSessionQuery?.data || [];
-
-  const showModal = (visible, option) => {
-    if (option === 'Add') {
-      setEditOption({});
-    }
-    setKey(option);
-    setOpened(visible);
-    refetch();
+  const fetchAssessmentSessionMeta = () => {
+    const sessionKey = new URLSearchParams(window.location.search).get(
+      'sessionKey',
+    );
+    return baseApi.get(
+      `/assessmentSession/meta?sessionKey=${encodeURI(sessionKey)}`,
+    );
   };
 
-  const handleEdit = useCallback((obj) => {
-    setEditOption(obj);
-    showModal(true, 'Edit');
-  }, []);
+  const handleFetchAssessmentSessionSuccess = ({ data }) => {
+    if (!data) return;
+    try {
+      const assumedStartTime = data.startTime
+        ? new Date(data.startTime)
+        : new Date();
+      setEndTime(
+        assumedStartTime.getTime() + data.timeAllowedInMins * 60 * 1000,
+      );
+      const allTechType = Object.keys(data.questionsMeta);
+      const initialActiveTechType = allTechType[0];
+      setActiveTechTypeTab(initialActiveTechType);
+      setQuestionTypeTabStatus(
+        allTechType.reduce((acc, cur) => {
+          acc[cur] = Object.keys(data.questionsMeta[cur])[0];
+          return acc;
+        }, {}),
+      );
+      setQuestionStatus(
+        allTechType.reduce((acc, cur) => {
+          acc[cur] = 0;
+          return acc;
+        }, {}),
+      );
+    } catch (e) {
+      console.log('error on handleFetchAssessmentSessionSuccess', e);
+    }
+  };
 
-  const handleDelete = useCallback((obj) => {
-    const { id } = obj;
-    baseApi.delete(
-      '/assessmentSession',
-      { data: [id] },
-    ).then(() => {
-      refetch();
-      showNotification({
-        title: '',
-        message: 'Deleted Successfully',
-      });
-    }).catch(() => {
-      showNotification({
-        title: '',
-        message: 'Something went to wrong',
-      });
-    });
-  }, []);
+  const {
+    data: assessmentSessionQuery,
+    isLoading,
+    isError,
+  } = useQuery([queryConstants.assessmentSession], fetchAssessmentSessionMeta, {
+    onSuccess: handleFetchAssessmentSessionSuccess,
+    enabled: !!techTypesQuery,
+  });
 
-  const handlers = useMemo(() => ({
-    handleEdit,
-    handleDelete,
-  }), []);
+  const handleComplete = () => {
+    console.log('completed');
+  };
 
-  if (isLoading) {
+  const handleTechTypeTabChange = (newActiveTab) => {
+    setActiveTechTypeTab(newActiveTab);
+  };
+
+  const handleQuestionTypeTabChange = (newActiveTab) => {
+    questionTypeTabStatus[activeTechTypeTab] = newActiveTab;
+    setQuestionTypeTabStatus({ ...questionTypeTabStatus });
+  };
+
+  const session = assessmentSessionQuery?.data;
+  const techTypes = techTypesQuery?.data;
+
+  const techTypeHash = useMemo(
+    () => (techTypes || []).reduce((acc, cur) => {
+      acc[cur.id] = cur.name;
+      return acc;
+    }, {}),
+    [techTypes],
+  );
+
+  if (isLoading || isLoadingTechTypes) {
     return <LoadingOverlay visible overlayBlur={2} />;
   }
 
-  if (isError) {
-    return <Title>Error occurred</Title>;
+  if (isErrorTechTypes || !techTypes) {
+    return <Title>Error Fetching Data</Title>;
   }
 
+  if (isError || !session) {
+    return <Title>Invalid Session</Title>;
+  }
+
+  const { questionsMeta } = session;
+
   return (
-    <Paper p={10}>
-      <Grid justify="space-between">
-        <Grid.Col span={4}>
-          <Title order={2} mb={4}>
-            Assessment
-          </Title>
-        </Grid.Col>
-        <Grid.Col span={1}>
-          <ActionIcon
-            onClick={() => showModal(true, 'Add')}
-            variant="filled"
-            sx={{ backgroundColor: '#211c57', marginLeft: 'auto' }}
-          >
-            <IconPlaylistAdd size={24} />
-          </ActionIcon>
-        </Grid.Col>
-      </Grid>
-      <Grid>
-        <TableComponent data={assessmentSessions} config={tableConfig} handlers={handlers} />
-        {opened && (
-        <UpsertInterview
-          option={key}
-          opened={opened}
-          editOption={editOption}
-          setOpened={showModal}
-        />
-        )}
-      </Grid>
-    </Paper>
+    <div className="container">
+      <div className="header">
+        <div className="logo-container">
+          <Avatar radius={10} src={Logo} alt="Kaaylabs-MCQ" className="logo" />
+        </div>
+        <div className="right-content">
+          <div>
+            Remaining Time:
+            {' '}
+            <Countdown
+              date={endTime}
+              onComplete={handleComplete}
+              zeroPadDays={1}
+            />
+          </div>
+        </div>
+      </div>
+      <div className="body">
+        <Tabs value={activeTechTypeTab} onTabChange={handleTechTypeTabChange}>
+          <Tabs.List>
+            {Object.keys(questionsMeta).map((techTypeId) => (
+              <Tabs.Tab value={techTypeId}>{techTypeHash[techTypeId]}</Tabs.Tab>
+            ))}
+          </Tabs.List>
+
+          {Object.keys(questionsMeta).map((techTypeId) => (
+            <Tabs.Panel value={techTypeId}>
+              <Tabs
+                value={questionTypeTabStatus[techTypeId]}
+                onTabChange={handleQuestionTypeTabChange}
+              >
+                <Tabs.List>
+                  {Object.keys(questionsMeta[techTypeId]).map(
+                    (questionType) => (
+                      <Tabs.Tab value={questionType}>{questionType}</Tabs.Tab>
+                    ),
+                  )}
+                </Tabs.List>
+
+                {Object.keys(questionsMeta[techTypeId]).map((questionType) => (
+                  <Tabs.Panel value={questionType}>
+                    {Array(questionsMeta[techTypeId][questionType])
+                      .fill()
+                      .map((_, idx) => <Button style={{ backgroundColor: questionStatus[techTypeId] === idx ? 'black' : 'blue' }}>{idx + 1}</Button>)}
+                  </Tabs.Panel>
+                ))}
+              </Tabs>
+            </Tabs.Panel>
+          ))}
+        </Tabs>
+      </div>
+    </div>
   );
 }
+
+export default Client;
