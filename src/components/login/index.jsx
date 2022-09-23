@@ -6,6 +6,7 @@ import {
   Title,
   Container,
   Button,
+  Grid,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation } from '@tanstack/react-query';
@@ -47,37 +48,33 @@ export default function AuthenticationTitle() {
   });
 
   return (
-    <Container size={420} my={40}>
-      <Title
-        align="center"
-        sx={(theme) => ({
-          fontFamily: `Greycliff CF, ${theme.fontFamily}`,
-          fontWeight: 900,
-        })}
-      >
-        Entretien
-      </Title>
+    <div className="login-wrapper">
+      <Grid align="center" style={{ margin: 'auto', height: '100%' }}>
+        <Grid.Col span={4} offset={7} className="login-wrapper-grid">
+          <Title align="center">
+            Entretien
+          </Title>
+          <form onSubmit={form.onSubmit(loginMutation.mutate)}>
+            <TextInput
+              required
+              label="Email"
+              mt="md"
+              {...form.getInputProps('email')}
+            />
 
-      <Paper withBorder shadow="md" p={30} mt={30} radius="md">
-        <form onSubmit={form.onSubmit(loginMutation.mutate)}>
-          <TextInput
-            required
-            label="Email"
-            mt="md"
-            {...form.getInputProps('email')}
-          />
+            <PasswordInput
+              required
+              label="Password"
+              mt="md"
+              {...form.getInputProps('password')}
+            />
+            <Button fullWidth mt="xl" type="submit">
+              Sign in
+            </Button>
+          </form>
 
-          <PasswordInput
-            required
-            label="Password"
-            mt="md"
-            {...form.getInputProps('password')}
-          />
-          <Button fullWidth mt="xl" type="submit">
-            Sign in
-          </Button>
-        </form>
-      </Paper>
-    </Container>
+        </Grid.Col>
+      </Grid>
+    </div>
   );
 }

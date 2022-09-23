@@ -1,13 +1,11 @@
 import React from 'react';
 import {
-  AppShell, Navbar, Avatar, ActionIcon,
+  AppShell, Navbar, Avatar, ActionIcon, Header, Grid,
 } from '@mantine/core';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { IconLogout } from '@tabler/icons';
-// import { showNotification } from '@mantine/notifications';
-
 import Links from './links';
-import Logo from '../../assets/Online-Assessment-Tool-kaaylabs.svg';
+import Logo from '../../assets/Kaaylabs.png';
 import { flushLs } from '../../shared/utils';
 
 function Home() {
@@ -26,29 +24,28 @@ function Home() {
   return (
     <AppShell
       fixed={false}
+      header={(
+        <Header height={54}>
+          <Grid justify="space-between" align="Center">
+            <Grid.Col span={1}>
+              <Avatar src={Logo} alt="Kaaylabs-MCQ" style={{ marginLeft: '1em', marginTop: '3px' }} />
+            </Grid.Col>
+            <Grid.Col span={1}>
+              <ActionIcon onClick={handleLogout} style={{ margin: 'auto', marginRight: '1em', color: '#5F55D2' }}>
+                <IconLogout size={26} />
+              </ActionIcon>
+            </Grid.Col>
+          </Grid>
+
+        </Header>
+      )}
       navbar={(
         <Navbar className="sider">
           <Navbar.Section>
-            <Avatar
-              src={Logo}
-              alt="Kaaylabs-MCQ"
-            />
-          </Navbar.Section>
-          <Navbar.Section>
             <Links />
           </Navbar.Section>
-          <Navbar.Section className="logout-nav">
-            <ActionIcon
-              onClick={handleLogout}
-              variant="filled"
-              sx={{ backgroundColor: '#211c57' }}
-              className="d-flex-all"
-            >
-              <IconLogout size={24} />
-            </ActionIcon>
-          </Navbar.Section>
         </Navbar>
-    )}
+      )}
     >
       <Outlet />
     </AppShell>

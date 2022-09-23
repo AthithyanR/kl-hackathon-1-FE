@@ -9,7 +9,7 @@ export default function TableComponent(props) {
   const cells = columnDefs.map(({ value }) => value);
 
   return (
-    <Table>
+    <Table className="mytable">
       <thead>
         <tr>
           {tableHeads.map((columnName, idx) => (
