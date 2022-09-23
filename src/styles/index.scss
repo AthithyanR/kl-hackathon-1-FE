@@ -27,18 +27,26 @@ body {
 #root,
 .mantine-AppShell-root {
   height: 100%;
+  .mantine-Header-root{
+    box-shadow: rgb(0 0 0 / 40%) 0px 6px 10px 0px, rgb(255 255 255 / 5%) 0px 0px 0px 1px inset;
+   }
 }
 .mantine-AppShell-body {
   height: 100%;
   & .sider {
-    background-color: #311b92;
-    width: 4%;
+    background-color: $milkWhite;
+    width: 3%;
     border-radius: 0;
-    height: 100%;
+    height: auto;
     border: none;
     margin: auto;
+    margin-left: 0.5%;
+    border-radius: 0 50px 0 50px;
     z-index: 1;
-    margin-right: 2%;
+    overflow: hidden;
+    box-shadow: rgba(0, 0, 0, 0.547) 1.95px 1.95px 2.6px;
+
+    // box-shadow: rgb(0, 0, 0) 0px 2px 4px;
     .mantine-Avatar-root {
       margin: 14% auto;
     }
@@ -56,30 +64,23 @@ body {
       margin: 0;
       width: 100%;
       display: block;
-      padding: 16% 0;
+      padding: 1.5em 0;
+      color: $primary;
+
       &[data-active] {
-        color: #fefefe;
-        background-color: transparent;
+        color: $milkWhite;
+        background-color: $primary;
         position: relative;
-        &::after {
-          content: "";
-          position: absolute;
-          left: 0;
-          top: 20%;
-          height: 70%;
-          width: 4%;
-          background-color: #fefefe;
-          z-index: 1;
-          border-radius: 0 4px 4px 0;
-        }
+        box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px inset, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px inset;
+
       }
     }
   }
-  .mantine-AppShell-main{
-    margin-left: -2.4%;
-    z-index: 9;
-    background: #f8fafb;
-    border-radius: 8px 0 0 8px
+  .mantine-AppShell-main {
+    // margin-left: -2.4%;
+    // z-index: 9;
+    // background: #f8fafb;
+    // border-radius: 8px 0 0 8px;
   }
 }
 
@@ -87,4 +88,66 @@ body {
   margin-top: auto;
   color: white;
   width: 100%;
+}
+
+// linear-gradient(135deg,#ff5433 0%,#5689ff 100%)
+
+.login-wrapper {
+  background-image: url("../assets/images/world-map.jpg");
+  height: 100%;
+  background-repeat: no-repeat;
+  background-size: auto;
+  background-position: right center;
+  &-grid {
+    width: 30%;
+    height: 20rem;
+    padding: 1em 2em;
+    border-radius: 8px;
+    position: relative;
+    z-index: 1;
+    background: inherit;
+    overflow: hidden;
+    box-shadow: rgba(0, 0, 0, 0.541) 0px 2px 4px, rgba(0, 0, 0, 0.555) 0px 7px 13px -3px,
+      rgba(0, 0, 0, 0.486) 0px -3px 0px inset;
+    &::before {
+      content: "";
+      position: absolute;
+      background-color: #fff;
+      z-index: -1;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px inset, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px inset;
+      filter: opacity(0.5);
+    }
+  }
+}
+
+.mytable{
+  width: 80%;
+    margin: auto;
+    border: 1px solid #dee2e6;
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px;
+    & thead tr th{
+      color: #554cb6;
+      background-color: #efeefa;
+      opacity: 0.9;
+      font-size: 16px;
+    }
+    td{
+      color: #5e5e5e;
+    }
+  }
+.mantine-ActionIcon-root{
+  background-color: #cfccf1;
+  color: #5c53c8;
+&:hover {
+  background-color: #5c53c8;
+  color: #fcfdfe;
+}
+}
+.mantine-Paper-root{
+  height: 100%;
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 18px 50px -10px;
 }

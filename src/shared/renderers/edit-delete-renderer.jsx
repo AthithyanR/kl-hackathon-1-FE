@@ -2,22 +2,20 @@ import { ActionIcon } from '@mantine/core';
 import { IconPencil, IconTrash } from '@tabler/icons';
 
 const editDeleteRenderer = (obj, handlers) => (
-  <div style={{ display: 'flex' }}>
+  <div style={{ display: 'flex', justifyContent: 'space-between'}}>
     <ActionIcon
       variant="filled"
-      sx={{ backgroundColor: '#211c57', marginRight: 20 }}
-      // className="d-flex-all"
+      sx={{ backgroundColor: '#cfccf1', color: '#5F55D2' }}
       onClick={() => handlers.handleEdit && handlers.handleEdit(obj)}
     >
-      <IconPencil />
+      <IconPencil size={18} />
     </ActionIcon>
     <ActionIcon
       variant="filled"
-      sx={{ backgroundColor: '#211c57' }}
-      // className="d-flex-all"
+      sx={{ backgroundColor: '#cfccf1', color: '#5F55D2' }}
       onClick={() => handlers.handleDelete && handlers.handleDelete(obj)}
     >
-      <IconTrash />
+      <IconTrash size={18} />
     </ActionIcon>
   </div>
 );
