@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable no-use-before-define */
 /* eslint-disable max-len */
 import React, { forwardRef, useState, useEffect } from 'react';
@@ -13,6 +14,12 @@ import { queryConstants, questionTypes } from '../../../shared/constant-values';
 import baseApi from '../../../shared/api';
 import './upsert.scss';
 import { isEmpty } from '../../../shared/utils';
+
+const message = {
+  emails: 'Please enter valid email id',
+  randomCount: 'Please enter random count or select your question',
+  durationInMins: 'Please Enter valid duration',
+};
 
 const option = ({
   label,
@@ -66,9 +73,10 @@ export default function AddInterview(props) {
   const [questions, setQuestions] = useState([]);
   const [selectOption, setSelectOption] = useState({ questionType: questionTypes[0] });
   const [questionSelection, setQuesionSelection] = useState({});
-  const [invalidRandomCount, setInvalidRandomCount] = useState({});
-  const [interviewParams, setInterviewParams] = useState({ durationInMins: 60 });
+  const [interviewParams, setInterviewParams] = useState({ emails: [], randomCount: undefined, durationInMins: 60 });
   const [emailError, setEmailError] = useState(false);
+  const [isErrorMessage, setIsErrorMessage] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(false);
 
   const { questionType, techType } = selectOption;
 
@@ -145,8 +153,8 @@ export default function AddInterview(props) {
     setSelectOption({ questionType: questionTypes[0] });
     setSelectedTechGroup([]);
     setQuestions([]);
-    setInvalidRandomCount({});
-    setInvalidRandomCount({});
+    setInterviewParams({ emails: [], randomCount: undefined, durationInMins: 60 });
+    setQuesionSelection({});
   };
 
   const handleQuestionState = (e) => () => {
@@ -169,28 +177,67 @@ export default function AddInterview(props) {
         .filter((id) => id !== e);
     }
     setQuesionSelection({ ...questionSelection });
+    setInterviewParams((prev) => ({
+      ...prev,
+      randomCount: isEmpty(questionSelection) ? undefined : questionSelection[selectOption?.techType][selectOption?.questionType],
+    }));
+  };
+
+  useEffect(() => {
+    if (isErrorMessage) {
+      const { isErrorMesg, currentErrorMessage } = checkError(interviewParams);
+      setIsErrorMessage(isErrorMesg);
+      setErrorMessage(currentErrorMessage);
+    }
+  }, [interviewParams]);
+
+  const checkError = (params) => {
+    const error = [];
+    Object.entries(params).forEach(([key, value]) => {
+      if ([undefined, null, ''].includes(value)) {
+        error.push(key);
+      } else if (key === 'emails' && value.length === 0) {
+        error.push(key);
+      }
+    });
+    const currentError = error[0];
+    const isErrorMesg = error.length >= 1;
+    const currentErrorMessage = message[currentError];
+    return { isErrorMesg, currentErrorMessage };
   };
 
   const handleRandomization = (e) => {
     if (!questionSelection[selectOption.techType]) {
       questionSelection[selectOption.techType] = {};
     }
-    if (!e.target.value) {
+    if (!e) {
       questionSelection[selectOption.techType][selectOption.questionType] = [];
     } else {
-      questionSelection[selectOption.techType][selectOption.questionType] = Number(e.target.value);
+      questionSelection[selectOption.techType][selectOption.questionType] = Number(e);
     }
-    if (questions.length < Number(e.target.value)) {
-      setInvalidRandomCount({ ...invalidRandomCount, [techType]: questionType });
-    } else {
-      delete invalidRandomCount[techType];
-      setInvalidRandomCount({ ...invalidRandomCount });
-    }
+    setInterviewParams((prev) => ({ ...prev, randomCount: e }));
   };
 
   const doSubmit = async () => {
-    baseApi.post('/interviewSession', {
-      questionSelection,
+    const { emails: candidateEmails, durationInMins: timeAllowedInMins } = interviewParams;
+    const quizData = {};
+    if (!isEmpty(questionSelection)) {
+      Object.entries(questionSelection).forEach(([techTypeKey, techTypeValue]) => {
+        if (!quizData[techTypeKey]) {
+          quizData[techTypeKey] = {};
+          Object.entries(techTypeValue).forEach(([quizTypeKey, quizTypeValue]) => {
+            if (!quizData[techTypeKey][quizTypeKey]) {
+              quizData[techTypeKey][quizTypeKey] = {};
+              quizData[techTypeKey][quizTypeKey] = Array.isArray(quizTypeValue) ? quizTypeValue.reduce((a, id) => ({ ...a, [id]: false }), {}) : quizTypeValue;
+            }
+          });
+        }
+      });
+    }
+    baseApi.post('/assessmentSession', {
+      candidateEmails,
+      timeAllowedInMins,
+      questionData: JSON.stringify(quizData),
     }).then(() => {
       setOpened(false);
       showNotification({
@@ -206,7 +253,15 @@ export default function AddInterview(props) {
   };
 
   const handleSubmit = () => {
-    doSubmit();
+    const { isErrorMesg, currentErrorMessage } = checkError(interviewParams);
+    if (!isErrorMesg) {
+      if (!emailError) {
+        doSubmit();
+      }
+    } else {
+      setIsErrorMessage(isErrorMesg);
+      setErrorMessage(currentErrorMessage);
+    }
   };
 
   if (isLoading) {
@@ -219,14 +274,20 @@ export default function AddInterview(props) {
 
   const checkEmail = (e) => {
     const { value } = e.target;
-    const splitEmail = value.split(',');
-    splitEmail.forEach((i) => {
-      const email = i.trim();
-      // eslint-disable-next-line no-useless-escape
-      const regEx = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
-      setEmailError(!regEx.test(email));
+    // eslint-disable-next-line no-useless-escape
+    const regEx = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
+    const result = value.replace(/\s/g, '').split(/,|;/);
+    const emails = [];
+    result.forEach((i) => {
+      const em = i.trim();
+      if (!regEx.test(em) || em.length === 0) {
+        setEmailError(true);
+      } else {
+        emails.push(i);
+        setEmailError(false);
+      }
     });
-    setInterviewParams((prev) => ({ ...prev, emailId: value }));
+    setInterviewParams((prev) => ({ ...prev, emailId: value, emails }));
   };
 
   return (
@@ -235,6 +296,7 @@ export default function AddInterview(props) {
       opened={opened}
       size="80%"
       // fullScreen
+      closeOnClickOutside={false}
       onClose={() => onCloseModal()}
     >
       <Grid className="schedule-assessment-model-content">
@@ -291,18 +353,18 @@ export default function AddInterview(props) {
         </Grid.Col>
         {!!questions.length && (
           <>
-            <Input
+            <NumberInput
               value={questionSelection[selectOption.techType]?.[selectOption.questionType]}
-              type="number"
               placeholder="Choose random count"
               radius="md"
               onChange={handleRandomization}
+              max={questions.length}
+              min={1}
               rightSection={
-                <p>{questions.length}</p>
+                <Text>{questions.length}</Text>
               }
               disabled={(questionSelection[selectOption.techType]?.[selectOption.questionType] || []).length}
             />
-            {invalidRandomCount[techType] === questionType && 'invalid marks value'}
             <Grid.Col
               className="question"
               mt={10}
@@ -331,7 +393,7 @@ export default function AddInterview(props) {
                   }
                         readOnly
                         label={(
-                          <Text weight={500} size="md">
+                          <Text weight={500} onClick={handleQuestionState(q.id)} size="md">
                             <pre>
                               {q.question}
                             </pre>
@@ -357,7 +419,8 @@ export default function AddInterview(props) {
                 placeholder="Enter the email id"
                 radius="md"
                 value={interviewParams.emailId}
-                onChange={(e) => checkEmail(e)}
+                onChange={(e) => setInterviewParams((prev) => ({ ...prev, emailId: e.target.value }))}
+                onBlur={(e) => checkEmail(e)}
                 invalid={emailError}
               />
             </Grid.Col>
@@ -375,12 +438,23 @@ export default function AddInterview(props) {
             </Grid.Col>
             <Grid.Col
               mt={10}
+              span={4}
+            />
+            <Grid.Col
+              mt={10}
+              span={1}
               style={{ float: 'right' }}
             >
               <Button onClick={() => handleSubmit()}>
                 Save
-
               </Button>
+            </Grid.Col>
+            <Grid.Col
+              mt={10}
+              span={11}
+              style={{ float: 'right' }}
+            >
+              <Text size="md" mt={5} color="red">{isErrorMessage ? errorMessage : emailError ? message.emails : ''}</Text>
             </Grid.Col>
           </>
         )}
