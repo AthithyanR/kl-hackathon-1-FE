@@ -62,6 +62,8 @@ export default function SelectTechType(props) {
         value={selectedTechIds}
         valueComponent={option}
         itemComponent={Item}
+        transitionDuration={350}
+        transition="pop"
         searchable
         size="md"
         onChange={(e) => onChange(e)}

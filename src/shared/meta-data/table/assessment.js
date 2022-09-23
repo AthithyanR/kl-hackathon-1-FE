@@ -1,5 +1,6 @@
 import editDeleteRenderer from '../../renderers/edit-delete-renderer';
 import stateRenderer from '../../renderers/state-renderer';
+import scoreRenderer from '../../renderers/score-render';
 
 const config = {
   rowKey: 'id',
@@ -39,7 +40,7 @@ const config = {
     },
     {
       display: 'Score Out Of 100 percent',
-      renderer: (v) => `${v.scoreOutOf100Percent}%`,
+      renderer: scoreRenderer({ key: 'scoreOutOf100Percent' }),
     },
     {
       display: 'Operations',

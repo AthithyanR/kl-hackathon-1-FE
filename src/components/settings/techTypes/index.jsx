@@ -18,6 +18,7 @@ import { showNotification } from '@mantine/notifications';
 import { useForm } from '@mantine/form';
 import { dbMessageSnip, queryConstants } from '../../../shared/constant-values';
 import baseApi from '../../../shared/api';
+import './style.scss';
 
 function TechType({ techType, handleDelete, handleEdit }) {
   return (
@@ -27,10 +28,7 @@ function TechType({ techType, handleDelete, handleEdit }) {
         p="lg"
         radius="md"
         withBorder
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-        }}
+        className="card-container"
       >
         {techType.imgUrl && (
           <img
@@ -41,7 +39,7 @@ function TechType({ techType, handleDelete, handleEdit }) {
           />
         )}
         <Title order={3}>{techType.name}</Title>
-        <Box style={{ display: 'flex' }}>
+        <Box className="box-view">
           <ActionIcon
             mt={5}
             mr={5}
@@ -132,7 +130,7 @@ function TechTypes() {
   });
 
   if (isLoading) {
-    return <LoadingOverlay visible overlayBlur={2} />;
+    return <LoadingOverlay visible overlayBlur={2} loaderProps={{ color: 'violet', size: 'xl', variant: 'dots' }} />;
   }
 
   if (isError) {

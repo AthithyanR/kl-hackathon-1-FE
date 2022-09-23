@@ -1,8 +1,9 @@
 import { ActionIcon } from '@mantine/core';
 import { IconPencil, IconTrash } from '@tabler/icons';
+import './style.scss';
 
 const editDeleteRenderer = (obj, handlers) => (
-  <div style={{ display: 'flex', justifyContent: 'space-between'}}>
+  <div className="edit-delete-element">
     <ActionIcon
       variant="filled"
       sx={{ backgroundColor: '#cfccf1', color: '#5F55D2' }}

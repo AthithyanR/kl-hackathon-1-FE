@@ -1,5 +1,6 @@
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable max-len */
+/* eslint-disable import/no-unresolved */
 /* eslint-disable prefer-destructuring */
 import {
   Avatar, Button, Card, Checkbox, LoadingOverlay, Tabs, Text, Title,
@@ -187,7 +188,7 @@ function Client() {
     || isEmpty(questionStatus)) && !(isFetched && !session);
 
   if (loadingState) {
-    return <LoadingOverlay visible overlayBlur={2} />;
+    return <LoadingOverlay visible overlayBlur={2} loaderProps={{ color: 'violet', size: 'xl', variant: 'dots' }} />;
   }
 
   if (isErrorTechTypes || !techTypes) {

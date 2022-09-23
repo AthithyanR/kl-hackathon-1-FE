@@ -304,7 +304,7 @@ export default function UpsertAssessment(props) {
   };
 
   if (isLoading) {
-    return <LoadingOverlay visible overlayBlur={2} />;
+    return <LoadingOverlay visible overlayBlur={2} loaderProps={{ color: 'violet', size: 'xl', variant: 'dots' }} />;
   }
 
   if (isError) {
