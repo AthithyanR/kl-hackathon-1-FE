@@ -5,6 +5,7 @@ import {
 import { IconPlaylistAdd } from '@tabler/icons';
 import { useQuery } from '@tanstack/react-query';
 
+import { showNotification } from '@mantine/notifications';
 import UpsertInterview from './upsert';
 import { queryConstants } from '../../shared/constant-values';
 import baseApi from '../../shared/api';
@@ -13,20 +14,48 @@ import tableConfig from '../../shared/meta-data/table/assessment';
 
 export default function Interview() {
   const [opened, setOpened] = useState(false);
-  const { data: assessmentSessionQuery, isLoading, isError } = useQuery(
+  const [editOption, setEditOption] = useState({});
+  const [key, setKey] = useState('Add');
+  const {
+    data: assessmentSessionQuery, isLoading, isError, refetch,
+  } = useQuery(
     [queryConstants.assessments],
     () => baseApi.get('/assessmentSession'),
   );
 
   const assessmentSessions = assessmentSessionQuery?.data || [];
 
+  const showModal = (visible, option) => {
+    if (option === 'Add') {
+      setEditOption({});
+    }
+    setKey(option);
+    setOpened(visible);
+    refetch();
+  };
+
   const handleEdit = useCallback((obj) => {
-    console.log('edit', obj);
-    setOpened(true);
+    setEditOption(obj);
+    showModal(true, 'Edit');
   }, []);
 
   const handleDelete = useCallback((obj) => {
-    console.log('delete', obj);
+    const { id } = obj;
+    baseApi.delete(
+      '/assessmentSession',
+      { data: [id] },
+    ).then(() => {
+      refetch();
+      showNotification({
+        title: '',
+        message: 'Deleted Successfully',
+      });
+    }).catch(() => {
+      showNotification({
+        title: '',
+        message: 'Something went to wrong',
+      });
+    });
   }, []);
 
   const handlers = useMemo(() => ({
@@ -52,7 +81,7 @@ export default function Interview() {
         </Grid.Col>
         <Grid.Col span={1}>
           <ActionIcon
-            onClick={() => setOpened(true)}
+            onClick={() => showModal(true, 'Add')}
             variant="filled"
             sx={{ backgroundColor: '#211c57', marginLeft: 'auto' }}
           >
@@ -62,7 +91,14 @@ export default function Interview() {
       </Grid>
       <Grid>
         <TableComponent data={assessmentSessions} config={tableConfig} handlers={handlers} />
-        {opened && <UpsertInterview opened={opened} setOpened={setOpened} />}
+        {opened && (
+        <UpsertInterview
+          option={key}
+          opened={opened}
+          editOption={editOption}
+          setOpened={showModal}
+        />
+        )}
       </Grid>
     </Paper>
   );

@@ -50,7 +50,7 @@ const Item = forwardRef(({
 ));
 
 export default function SelectTechType(props) {
-  const { techTypes, onChange } = props;
+  const { techTypes, onChange, selectedTechIds } = props;
 
   return (
     <Grid.Col
@@ -59,6 +59,7 @@ export default function SelectTechType(props) {
       <MultiSelect
         data={techTypes}
         limit={20}
+        value={selectedTechIds}
         valueComponent={option}
         itemComponent={Item}
         searchable
