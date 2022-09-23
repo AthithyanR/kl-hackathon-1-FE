@@ -229,11 +229,14 @@ function Client() {
           </Button>
         </div>
       </div>
-      <div className="body">
+      <div className="assessment-body">
         <Tabs value={activeTechTypeTab} onTabChange={handleTechTypeTabChange}>
           <Tabs.List>
             {Object.keys(questionsMeta).map((techTypeId) => (
-              <Tabs.Tab key={techTypeId} value={techTypeId}>
+              <Tabs.Tab
+                key={techTypeId}
+                value={techTypeId}
+              >
                 {techTypeHash[techTypeId]}
               </Tabs.Tab>
             ))}
@@ -248,7 +251,11 @@ function Client() {
                 <Tabs.List>
                   {orderArrayBySample(Object.keys(questionsMeta[techTypeId]), questionTypes).map(
                     (questionType) => (
-                      <Tabs.Tab key={questionType} value={questionType}>
+                      <Tabs.Tab
+                        key={questionType}
+                        value={questionType}
+                        // className={questionsMeta[techTypeId] === questionType && 'active-tab'}
+                      >
                         {questionType}
                       </Tabs.Tab>
                     ),
