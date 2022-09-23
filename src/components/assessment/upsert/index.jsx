@@ -1,10 +1,9 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable no-use-before-define */
 /* eslint-disable max-len */
-import React, { forwardRef, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Title, Grid, Modal, MultiSelect, LoadingOverlay, Box,
-  CloseButton, Group, Button, Card, Text, Checkbox, Input, NumberInput,
+  Title, Grid, Modal, LoadingOverlay, Group, Button, Card, Text, Checkbox, Input, NumberInput,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { IconAt } from '@tabler/icons';
@@ -14,58 +13,13 @@ import { queryConstants, questionTypes } from '../../../shared/constant-values';
 import baseApi from '../../../shared/api';
 import './upsert.scss';
 import { isEmpty } from '../../../shared/utils';
+import SelectTechType from './select-tech-type';
 
 const message = {
-  emails: 'Please enter valid email id',
-  randomCount: 'Please enter random count or select your question',
-  durationInMins: 'Please Enter valid duration',
+  candidateEmails: 'Please Enter Valid Email ID',
+  randomCount: 'Please Enter Random Count or Select Your Question',
+  timeAllowedInMins: 'Please Enter Valid Duration',
 };
-
-const option = ({
-  label,
-  image,
-  onRemove,
-  classNames,
-  ...others
-}) => (
-  <div {...others}>
-    <Box
-      sx={(theme) => ({
-        display: 'flex',
-        cursor: 'default',
-        alignItems: 'center',
-        backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-        border: `1px solid ${theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[4]}`,
-        paddingLeft: 10,
-        borderRadius: 4,
-      })}
-    >
-      <Box mr={10}>
-        <img src={image} width="20" alt={label} />
-      </Box>
-      <Box sx={{ lineHeight: 1, fontSize: 12 }}>{label}</Box>
-      <CloseButton
-        onMouseDown={onRemove}
-        variant="transparent"
-        size={22}
-        iconSize={14}
-        tabIndex={-1}
-      />
-    </Box>
-  </div>
-);
-
-const Item = forwardRef(({
-  label, image, ...others
-}, ref) => (
-  <div ref={ref} {...others}>
-    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      <Box mr={10} />
-      <img src={image} width="20" alt={label} />
-      <div>{label}</div>
-    </Box>
-  </div>
-));
 
 export default function AddInterview(props) {
   const { opened, setOpened } = props;
@@ -73,7 +27,7 @@ export default function AddInterview(props) {
   const [questions, setQuestions] = useState([]);
   const [selectOption, setSelectOption] = useState({ questionType: questionTypes[0] });
   const [questionSelection, setQuesionSelection] = useState({});
-  const [interviewParams, setInterviewParams] = useState({ emails: [], randomCount: undefined, durationInMins: 60 });
+  const [interviewParams, setInterviewParams] = useState({ randomCount: null, candidateEmails: [], timeAllowedInMins: 60 });
   const [emailError, setEmailError] = useState(false);
   const [isErrorMessage, setIsErrorMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState(false);
@@ -153,7 +107,7 @@ export default function AddInterview(props) {
     setSelectOption({ questionType: questionTypes[0] });
     setSelectedTechGroup([]);
     setQuestions([]);
-    setInterviewParams({ emails: [], randomCount: undefined, durationInMins: 60 });
+    setInterviewParams({ candidateEmails: [], randomCount: null, timeAllowedInMins: 60 });
     setQuesionSelection({});
   };
 
@@ -179,7 +133,7 @@ export default function AddInterview(props) {
     setQuesionSelection({ ...questionSelection });
     setInterviewParams((prev) => ({
       ...prev,
-      randomCount: isEmpty(questionSelection) ? undefined : questionSelection[selectOption?.techType][selectOption?.questionType],
+      randomCount: isEmpty(questionSelection) ? null : questionSelection[selectOption?.techType][selectOption?.questionType],
     }));
   };
 
@@ -194,9 +148,9 @@ export default function AddInterview(props) {
   const checkError = (params) => {
     const error = [];
     Object.entries(params).forEach(([key, value]) => {
-      if ([undefined, null, ''].includes(value)) {
+      if ([null, ''].includes(value)) {
         error.push(key);
-      } else if (key === 'emails' && value.length === 0) {
+      } else if (key === 'candidateEmails' && value.length === 0) {
         error.push(key);
       }
     });
@@ -218,8 +172,8 @@ export default function AddInterview(props) {
     setInterviewParams((prev) => ({ ...prev, randomCount: e }));
   };
 
-  const doSubmit = async () => {
-    const { emails: candidateEmails, durationInMins: timeAllowedInMins } = interviewParams;
+  const doSubmit = () => {
+    const { candidateEmails, timeAllowedInMins } = interviewParams;
     const quizData = {};
     if (!isEmpty(questionSelection)) {
       Object.entries(questionSelection).forEach(([techTypeKey, techTypeValue]) => {
@@ -277,17 +231,17 @@ export default function AddInterview(props) {
     // eslint-disable-next-line no-useless-escape
     const regEx = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
     const result = value.replace(/\s/g, '').split(/,|;/);
-    const emails = [];
+    const candidateEmails = [];
     result.forEach((i) => {
       const em = i.trim();
       if (!regEx.test(em) || em.length === 0) {
         setEmailError(true);
       } else {
-        emails.push(i);
+        candidateEmails.push(i);
         setEmailError(false);
       }
     });
-    setInterviewParams((prev) => ({ ...prev, emailId: value, emails }));
+    setInterviewParams((prev) => ({ ...prev, emailId: value, candidateEmails }));
   };
 
   return (
@@ -300,21 +254,7 @@ export default function AddInterview(props) {
       onClose={() => onCloseModal()}
     >
       <Grid className="schedule-assessment-model-content">
-        <Grid.Col
-          mt={10}
-        >
-          <MultiSelect
-            data={techTypes}
-            limit={20}
-            valueComponent={option}
-            itemComponent={Item}
-            searchable
-            size="md"
-            onChange={(e) => onChange(e)}
-            placeholder="Select Tech Type"
-          />
-
-        </Grid.Col>
+        <SelectTechType techTypes={techTypes} onChange={onChange} />
         {!!selectedTechGroup.length && (
           <Grid.Col
             mt={10}
@@ -353,18 +293,49 @@ export default function AddInterview(props) {
         </Grid.Col>
         {!!questions.length && (
           <>
-            <NumberInput
-              value={questionSelection[selectOption.techType]?.[selectOption.questionType]}
-              placeholder="Choose random count"
-              radius="md"
-              onChange={handleRandomization}
-              max={questions.length}
-              min={1}
-              rightSection={
-                <Text>{questions.length}</Text>
+            <Grid.Col
+              mt={10}
+              span={4}
+            >
+              <NumberInput
+                value={questionSelection[selectOption.techType]?.[selectOption.questionType]}
+                placeholder="Choose Random Count"
+                radius="md"
+                onChange={handleRandomization}
+                max={questions.length}
+                min={1}
+                rightSection={
+                  <Text>{questions.length}</Text>
               }
-              disabled={(questionSelection[selectOption.techType]?.[selectOption.questionType] || []).length}
-            />
+                disabled={(questionSelection[selectOption.techType]?.[selectOption.questionType] || []).length}
+              />
+            </Grid.Col>
+            <Grid.Col
+              mt={10}
+              span={4}
+            >
+              <Input
+                icon={<IconAt />}
+                placeholder="Enter The Email Id"
+                radius="md"
+                value={interviewParams.emailId}
+                onChange={(e) => setInterviewParams((prev) => ({ ...prev, emailId: e.target.value }))}
+                onBlur={(e) => checkEmail(e)}
+                invalid={emailError}
+              />
+            </Grid.Col>
+            <Grid.Col
+              mt={10}
+              span={4}
+            >
+              <NumberInput
+                placeholder="Enter the Allowed Duration"
+                radius="md"
+                value={interviewParams.timeAllowedInMins}
+                hideControls
+                onChange={(e) => setInterviewParams((prev) => ({ ...prev, timeAllowedInMins: e }))}
+              />
+            </Grid.Col>
             <Grid.Col
               className="question"
               mt={10}
@@ -412,49 +383,18 @@ export default function AddInterview(props) {
             </Grid.Col>
             <Grid.Col
               mt={10}
-              span={4}
+              span={11}
             >
-              <Input
-                icon={<IconAt />}
-                placeholder="Enter the email id"
-                radius="md"
-                value={interviewParams.emailId}
-                onChange={(e) => setInterviewParams((prev) => ({ ...prev, emailId: e.target.value }))}
-                onBlur={(e) => checkEmail(e)}
-                invalid={emailError}
-              />
+              <Text size="md" style={{ float: 'right' }} mt={10} color="red">{isErrorMessage ? errorMessage : emailError ? message.candidateEmails : ''}</Text>
             </Grid.Col>
-            <Grid.Col
-              mt={10}
-              span={4}
-            >
-              <NumberInput
-                placeholder="Enter the Allowed Duration"
-                radius="md"
-                value={interviewParams.durationInMins}
-                hideControls
-                onChange={(e) => setInterviewParams((prev) => ({ ...prev, durationInMins: e }))}
-              />
-            </Grid.Col>
-            <Grid.Col
-              mt={10}
-              span={4}
-            />
             <Grid.Col
               mt={10}
               span={1}
               style={{ float: 'right' }}
             >
-              <Button onClick={() => handleSubmit()}>
+              <Button size="md" onClick={() => handleSubmit()}>
                 Save
               </Button>
-            </Grid.Col>
-            <Grid.Col
-              mt={10}
-              span={11}
-              style={{ float: 'right' }}
-            >
-              <Text size="md" mt={5} color="red">{isErrorMessage ? errorMessage : emailError ? message.emails : ''}</Text>
             </Grid.Col>
           </>
         )}

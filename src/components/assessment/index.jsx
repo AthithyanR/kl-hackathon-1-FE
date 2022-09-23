@@ -22,6 +22,7 @@ export default function Interview() {
 
   const handleEdit = useCallback((obj) => {
     console.log('edit', obj);
+    setOpened(true);
   }, []);
 
   const handleDelete = useCallback((obj) => {
@@ -61,7 +62,7 @@ export default function Interview() {
       </Grid>
       <Grid>
         <TableComponent data={assessmentSessions} config={tableConfig} handlers={handlers} />
-        <UpsertInterview opened={opened} setOpened={setOpened} />
+        {opened && <UpsertInterview opened={opened} setOpened={setOpened} />}
       </Grid>
     </Paper>
   );
