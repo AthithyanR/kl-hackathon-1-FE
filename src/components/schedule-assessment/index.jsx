@@ -72,7 +72,7 @@ export default function Assessment() {
   }
 
   return (
-    <Paper p={10}>
+    <Paper p={10} style={{ height: 'Calc(100% - 10%)' }}>
       <Grid justify="space-between">
         <Grid.Col span={4}>
           <Title order={2} mb={4}>

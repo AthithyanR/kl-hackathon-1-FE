@@ -3,7 +3,7 @@
 /* eslint-disable import/no-unresolved */
 /* eslint-disable prefer-destructuring */
 import {
-  Avatar, Button, Card, Checkbox, LoadingOverlay, Tabs, Text, Title,
+  Avatar, Button, Card, Checkbox, LoadingOverlay, Tabs, Text, Title, Grid,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import React, { useState, useMemo, useEffect } from 'react';
@@ -264,7 +264,11 @@ function Client() {
                 </Tabs.List>
 
                 {Object.keys(questionsMeta[techTypeId]).map((questionType) => (
-                  <Tabs.Panel key={questionType} value={questionType}>
+                  <Tabs.Panel
+                    key={questionType}
+                    value={questionType}
+                    style={{ margin: '1em', alignItems: 'center', textAlign: 'center' }}
+                  >
                     {Array(questionsMeta[techTypeId][questionType])
                       .fill()
                       .map((_, idx) => (
@@ -280,46 +284,71 @@ function Client() {
                           {idx + 1}
                         </Button>
                       ))}
-                    <Card shadow="sm" mb={10} p={20}>
-                      <Text weight={500} size="md">
+                    <Card
+                      shadow="md"
+                      mb={10}
+                      p={20}
+                      radius="md"
+                      withBorder
+                      style={{ margin: '1em' }}
+                    >
+                      <Text weight={500} size="md" style={{ padding: '1em', marginBottom: '0.5em' }}>
                         {question}
                       </Text>
-                      <Card style={{ display: 'flex' }}>
-                        <Checkbox
-                          checked={selectedOption === 'option 1'}
-                          onChange={() => handleOptionSelect('option 1')}
-                          mr={10}
-                        />
-                        {option1}
-                      </Card>
-                      <Card style={{ display: 'flex' }}>
-                        <Checkbox
-                          checked={selectedOption === 'option 2'}
-                          onChange={() => handleOptionSelect('option 2')}
-                          mr={10}
-                        />
-                        {option2}
-                      </Card>
-                      <Card style={{ display: 'flex' }}>
-                        <Checkbox
-                          checked={selectedOption === 'option 3'}
-                          onChange={() => handleOptionSelect('option 3')}
-                          mr={10}
-                        />
-                        {option3}
-                      </Card>
-                      {
-                        option4 && (
-                          <Card style={{ display: 'flex' }}>
-                            <Checkbox
-                              checked={selectedOption === 'option 4'}
-                              onChange={() => handleOptionSelect('option 4')}
-                              mr={10}
-                            />
-                            {option4}
-                          </Card>
-                        )
-                      }
+                      <Grid justify="space-around">
+                        <Grid.Col
+                          span={5}
+                          style={{
+                            display: 'inherit', alignItems: 'center', background: '#fff', width: '50%', marginBottom: '0.5em', boxShadow: 'rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px',
+                          }}
+                        >
+                          <Checkbox
+                            checked={selectedOption === 'option 1'}
+                            onChange={() => handleOptionSelect('option 1')}
+                            mr={10}
+                          />
+                          {option1}
+                        </Grid.Col>
+                        <Grid.Col
+                          span={5}
+                          style={{
+                            display: 'inherit', alignItems: 'center', background: '#fff', width: '50%', marginBottom: '0.5em', boxShadow: 'rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px',
+                          }}
+                        >
+                          <Checkbox
+                            checked={selectedOption === 'option 2'}
+                            onChange={() => handleOptionSelect('option 2')}
+                            mr={10}
+                          />
+                          {option1}
+                        </Grid.Col>
+                        <Grid.Col
+                          span={5}
+                          style={{
+                            display: 'inherit', alignItems: 'center', background: '#fff', width: '50%', marginBottom: '0.5em', boxShadow: 'rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px',
+                          }}
+                        >
+                          <Checkbox
+                            checked={selectedOption === 'option 3'}
+                            onChange={() => handleOptionSelect('option 3')}
+                            mr={10}
+                          />
+                          {option1}
+                        </Grid.Col>
+                        <Grid.Col
+                          span={5}
+                          style={{
+                            display: 'inherit', alignItems: 'center', background: '#fff', width: '50%', marginBottom: '0.5em', boxShadow: 'rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px',
+                          }}
+                        >
+                          <Checkbox
+                            checked={selectedOption === 'option 4'}
+                            onChange={() => handleOptionSelect('option 4')}
+                            mr={10}
+                          />
+                          {option1}
+                        </Grid.Col>
+                      </Grid>
                     </Card>
                   </Tabs.Panel>
                 ))}

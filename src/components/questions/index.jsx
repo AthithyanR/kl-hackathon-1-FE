@@ -165,7 +165,7 @@ export default function Questions() {
   }
 
   return (
-    <Paper p={10}>
+    <Paper p={10} style={{ height: 'Calc(100% - 10%)' }}>
       <Grid justify="space-between">
         <Grid.Col span={4}>
           <Title order={2} mb={4}>
@@ -198,7 +198,7 @@ export default function Questions() {
         />
         )}
       </Grid>
-      <Grid justify="space-between">
+      <Grid justify="space-between" align="Center">
         <Grid.Col span={4}>
           <Select
             label="Tech Types"
@@ -214,90 +214,110 @@ export default function Questions() {
           />
         </Grid.Col>
         <Grid.Col span={3}>
-          {questionTypes.map((type) => (
-            <Button
-              key={type}
-              className="option-btn"
-              style={{ backgroundColor: questionType === type ? '#6f6af8' : '#ffffff', color: '#343a40' }}
-              onClick={() => setSingleValue('questionType', type)}
-            >
-              {type}
-            </Button>
-          ))}
+          <div style={{
+            display: 'flex',
+            alingItems: 'center',
+            backgroundColor: '#cfccf1',
+            justifyContent: 'space-around',
+            padding: '0.5em 0',
+            borderRadius: '10px',
+          }}
+          >
+            {questionTypes.map((type) => (
+              <Button
+                key={type}
+                className="option-btn"
+                style={{ backgroundColor: questionType === type ? '#6f6af8' : '#ffffff', color: '#343a40' }}
+                onClick={() => setSingleValue('questionType', type)}
+              >
+                {type}
+              </Button>
+            ))}
+          </div>
         </Grid.Col>
       </Grid>
       <Grid>
         <Grid.Col span={12}>
-          <Paper>
-            {!!questions.length && (
-              <Grid.Col
-                className="question"
-                mt={10}
-                span={12}
+          {!!questions.length && (
+          <Grid.Col
+            className="question"
+            mt={10}
+            span={12}
+          >
+            {questions.map((q) => (
+              <Card
+                shadow="md"
+                mb={10}
+                p={20}
+                key={q.id}
+                radius="md"
+                withBorder
               >
-                  {questions.map((q) => (
-                    <Card
-                      shadow="sm"
-                      mb={10}
-                      p={20}
-                      key={q.id}
+                <Grid>
+                  <Grid.Col span={11}>
+                    <Text weight={500} size="md" style={{ padding: '1em' }}>
+                      {q.question}
+                      {' : '}
+                      {q.marks}
+                    </Text>
+                  </Grid.Col>
+                  <Grid.Col span={1} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}>
+                    <ActionIcon
+                      mr={5}
+                      onClick={() => openModal('edit', true, q)}
+                      variant="light"
                     >
-                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <Box>
-                          <ActionIcon
-                            mr={5}
-                            onClick={() => openModal('edit', true, q)}
-                            variant="light"
-                            // onClick={openModal(q.id)}
-                          >
-                            <IconPencilPlus />
-                          </ActionIcon>
-                        </Box>
-                        <Box>
-                          <ActionIcon
-                            mr={5}
-                            onClick={() => setOpenConfirm(true)}
-                            variant="light"
-                          >
-                            <IconTrash />
-                          </ActionIcon>
-
-                        </Box>
-                      </div>
-                      <Text weight={500} size="md">
-                        {q.question}
-                        {' : '}
-                        {q.marks}
-                      </Text>
-                      <Card>
-                        {q.option1}
-                      </Card>
-                      <Card>
-                        {q.option2}
-                      </Card>
-                      <Card>
-                        {q.option3}
-                      </Card>
-                      <Card>
-                        {q.option4}
-                      </Card>
-                      <Modal
-                        opened={isOpenConfirm}
-                        onClose={() => setOpenConfirm(false)}
-                        title="Do you want to delete this question?"
-                        closeOnClickOutside={false}
-                        overlayOpacity={0.1}
-                      >
-                        <Group spacing="lg" float="left">
-                          <Button onClick={() => setOpenConfirm(false)}>Cancel</Button>
-                          <Button color="red" onClick={() => handleDelete(q.id)}>Delete</Button>
-                        </Group>
-                      </Modal>
-                    </Card>
-                  ))}
-              </Grid.Col>
-            )}
-          </Paper>
+                      <IconPencilPlus />
+                    </ActionIcon>
+                    <ActionIcon
+                      mr={5}
+                      onClick={() => setOpenConfirm(true)}
+                      variant="light"
+                    >
+                      <IconTrash />
+                    </ActionIcon>
+                  </Grid.Col>
+                </Grid>
+                <Grid justify="space-around">
+                  <Grid.Col
+                    span={5}
+                    style={{
+                      background: '#fff', width: '50%', marginBottom: '0.5em', boxShadow: 'rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px',
+                    }}
+                  >
+                    {q.option1}
+                  </Grid.Col>
+                  <Grid.Col
+                    span={5}
+                    style={{
+                      background: '#fff', width: '50%', marginBottom: '0.5em', boxShadow: 'rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px',
+                    }}
+                  >
+                    {q.option2}
+                  </Grid.Col>
+                  <Grid.Col span={5} style={{ background: '#fff', boxShadow: 'rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px' }}>
+                    {q.option3}
+                  </Grid.Col>
+                  <Grid.Col span={5} style={{ background: '#fff', boxShadow: 'rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px' }}>
+                    {q.option4}
+                  </Grid.Col>
+                </Grid>
+                <Modal
+                  opened={isOpenConfirm}
+                  onClose={() => setOpenConfirm(false)}
+                  title="Do you want to delete this question?"
+                  closeOnClickOutside={false}
+                  overlayOpacity={0.1}
+                >
+                  <Group spacing="lg" float="left">
+                    <Button onClick={() => setOpenConfirm(false)}>Cancel</Button>
+                    <Button color="red" onClick={() => handleDelete(q.id)}>Delete</Button>
+                  </Group>
+                </Modal>
+              </Card>
+            ))}
+          </Grid.Col>
+          )}
         </Grid.Col>
       </Grid>
     </Paper>
