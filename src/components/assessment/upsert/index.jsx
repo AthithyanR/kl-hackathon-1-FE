@@ -265,7 +265,7 @@ export default function AddInterview(props) {
                 <Button
                   key={id}
                   className="option-btn"
-                  style={{ backgroundColor: techType === id ? '#6f6af8' : '#ffffff', color: '#343a40' }}
+                  style={{ backgroundColor: techType === id ? '#6f6af8' : '#ffffff', color: '#eee' }}
                   onClick={() => setSingleValue('techType', id)}
                 >
                   {label}
