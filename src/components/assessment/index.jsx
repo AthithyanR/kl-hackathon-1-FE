@@ -320,7 +320,7 @@ function Client() {
                             onChange={() => handleOptionSelect('option 2')}
                             mr={10}
                           />
-                          {option1}
+                          {option2}
                         </Grid.Col>
                         <Grid.Col
                           span={5}
@@ -333,7 +333,7 @@ function Client() {
                             onChange={() => handleOptionSelect('option 3')}
                             mr={10}
                           />
-                          {option1}
+                          {option3}
                         </Grid.Col>
                         <Grid.Col
                           span={5}
@@ -346,7 +346,7 @@ function Client() {
                             onChange={() => handleOptionSelect('option 4')}
                             mr={10}
                           />
-                          {option1}
+                          {option4}
                         </Grid.Col>
                       </Grid>
                     </Card>
