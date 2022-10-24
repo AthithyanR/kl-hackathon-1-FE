@@ -11,7 +11,6 @@ import { showNotification } from '@mantine/notifications';
 
 import { queryConstants, questionTypes } from '../../../shared/constant-values';
 import baseApi from '../../../shared/api';
-import './upsert.scss';
 import { isEmpty } from '../../../shared/utils';
 
 const option = ({
@@ -33,9 +32,11 @@ const option = ({
         borderRadius: 4,
       })}
     >
+      {image && (
       <Box mr={10}>
         <img src={image} width="20" alt={label} />
       </Box>
+      )}
       <Box sx={{ lineHeight: 1, fontSize: 12 }}>{label}</Box>
       <CloseButton
         onMouseDown={onRemove}
@@ -54,7 +55,7 @@ const Item = forwardRef(({
   <div ref={ref} {...others}>
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
       <Box mr={10} />
-      <img src={image} width="20" alt={label} />
+      {image && <img src={image} width="20" alt={label} />}
       <div>{label}</div>
     </Box>
   </div>

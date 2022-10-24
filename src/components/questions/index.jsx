@@ -36,18 +36,19 @@ const option = ({
         alignItems: 'center',
         backgroundColor:
           theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-        border: `1px solid ${
-          theme.colorScheme === 'dark'
-            ? theme.colors.dark[7]
-            : theme.colors.gray[4]
+        border: `1px solid ${theme.colorScheme === 'dark'
+          ? theme.colors.dark[7]
+          : theme.colors.gray[4]
         }`,
         paddingLeft: 10,
         borderRadius: 4,
       })}
     >
+      {image && (
       <Box mr={10}>
         <img src={image} width="20" alt={label} />
       </Box>
+      )}
       <Box sx={{ lineHeight: 1, fontSize: 12 }}>{label}</Box>
       <CloseButton
         onMouseDown={onRemove}
@@ -64,7 +65,7 @@ const Item = forwardRef(({ label, image, ...others }, ref) => (
   <div ref={ref} {...others}>
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
       <Box mr={10} />
-      <img src={image} width="20" alt={label} />
+      {image && <img src={image} width="20" alt={label} />}
       <div>{label}</div>
     </Box>
   </div>
@@ -77,6 +78,7 @@ export default function Questions() {
   const [selectOption, setSelectOption] = useState({ questionType: questionTypes[0] });
   const [modelKey, setModalKey] = useState('add');
   const [editObject, setEditObject] = useState({});
+  const [deleteId, setDeleteId] = useState(null);
 
   const { questionType, techType } = selectOption;
   const queryClient = useQueryClient();
@@ -138,21 +140,25 @@ export default function Questions() {
     (payload) => baseApi.delete('/questions', { data: [payload] }),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries([queryConstants.questions]);
+        fetchData();
+        showNotification({
+          title: '',
+          message: 'Deleted Successfully',
+        });
       },
       onError: (err) => {
         showNotification({
-          message: err?.data?.includes(dbMessageSnip.foreignKey)
-            ? 'Please delete related questions!'
-            : 'Unable to delete question!',
+          message: err?.data.includes(dbMessageSnip.foreignKey)
+            ? 'Unable to delete the question as it is mapped with a session!'
+            : 'Unable to delete the question!',
         });
       },
     },
   );
 
-  const handleDelete = (id) => {
-    deleteMutation.mutate(id);
-    fetchData();
+  const handleDelete = () => {
+    deleteMutation.mutate(deleteId);
+    setDeleteId(null);
     setOpenConfirm(false);
   };
 
@@ -165,7 +171,7 @@ export default function Questions() {
   }
 
   return (
-    <Paper p={10} style={{ height: 'Calc(100% - 10%)' }}>
+    <Paper p={10} style={{ height: 'calc(100% - 10%)' }}>
       <Grid justify="space-between">
         <Grid.Col span={4}>
           <Title order={2} mb={4}>
@@ -173,20 +179,19 @@ export default function Questions() {
           </Title>
         </Grid.Col>
         {techType
-        && (
-        <Grid.Col span={1}>
-          <ActionIcon
-            onClick={() => openModal('add', true)}
-            variant="filled"
-            sx={{ backgroundColor: '#211c57', marginLeft: 'auto' }}
-          >
-            <IconPlaylistAdd size={24} />
-          </ActionIcon>
-        </Grid.Col>
-        )}
+          && (
+            <Grid.Col span={1}>
+              <ActionIcon
+                onClick={() => openModal('add', true)}
+                variant="filled"
+                sx={{ backgroundColor: '#211c57', marginLeft: 'auto' }}
+              >
+                <IconPlaylistAdd size={24} />
+              </ActionIcon>
+            </Grid.Col>
+          )}
       </Grid>
-      <Grid>
-        {opened && (
+      {opened && (
         <AddQuestion
           techType={techType}
           modelKey={modelKey}
@@ -196,8 +201,7 @@ export default function Questions() {
           editObject={editObject}
           refetchData={refetchData}
         />
-        )}
-      </Grid>
+      )}
       <Grid justify="space-between" align="Center">
         <Grid.Col span={4}>
           <Select
@@ -239,87 +243,91 @@ export default function Questions() {
       <Grid>
         <Grid.Col span={12}>
           {!!questions.length && (
-          <Grid.Col
-            className="question"
-            mt={10}
-            span={12}
-          >
-            {questions.map((q) => (
-              <Card
-                shadow="md"
-                mb={10}
-                p={20}
-                key={q.id}
-                radius="md"
-                withBorder
-              >
-                <Grid>
-                  <Grid.Col span={11}>
-                    <Text weight={500} size="md" style={{ padding: '1em' }}>
-                      {q.question}
-                      {' : '}
-                      {q.marks}
-                    </Text>
-                  </Grid.Col>
-                  <Grid.Col span={1} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}>
-                    <ActionIcon
-                      mr={5}
-                      onClick={() => openModal('edit', true, q)}
-                      variant="light"
-                    >
-                      <IconPencilPlus />
-                    </ActionIcon>
-                    <ActionIcon
-                      mr={5}
-                      onClick={() => setOpenConfirm(true)}
-                      variant="light"
-                    >
-                      <IconTrash />
-                    </ActionIcon>
-                  </Grid.Col>
-                </Grid>
-                <Grid justify="space-around">
-                  <Grid.Col
-                    span={5}
-                    style={{
-                      background: '#fff', width: '50%', marginBottom: '0.5em', boxShadow: 'rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px',
-                    }}
-                  >
-                    {q.option1}
-                  </Grid.Col>
-                  <Grid.Col
-                    span={5}
-                    style={{
-                      background: '#fff', width: '50%', marginBottom: '0.5em', boxShadow: 'rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px',
-                    }}
-                  >
-                    {q.option2}
-                  </Grid.Col>
-                  <Grid.Col span={5} style={{ background: '#fff', boxShadow: 'rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px' }}>
-                    {q.option3}
-                  </Grid.Col>
-                  <Grid.Col span={5} style={{ background: '#fff', boxShadow: 'rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px' }}>
-                    {q.option4}
-                  </Grid.Col>
-                </Grid>
-                <Modal
-                  opened={isOpenConfirm}
-                  onClose={() => setOpenConfirm(false)}
-                  title="Do you want to delete this question?"
-                  closeOnClickOutside={false}
-                  overlayOpacity={0.1}
+            <Grid.Col
+              className="question"
+              mt={10}
+              span={12}
+            >
+              {questions.map((q) => (
+                <Card
+                  shadow="md"
+                  mb={10}
+                  p={20}
+                  key={q.id}
+                  radius="md"
+                  withBorder
                 >
-                  <Group spacing="lg" float="left">
-                    <Button onClick={() => setOpenConfirm(false)}>Cancel</Button>
-                    <Button color="red" onClick={() => handleDelete(q.id)}>Delete</Button>
-                  </Group>
-                </Modal>
-              </Card>
-            ))}
-          </Grid.Col>
+                  <Grid>
+                    <Grid.Col span={10}>
+                      <pre style={{ fontWeight: '500', padding: '1em' }}>
+                        {q.question}
+                      </pre>
+                    </Grid.Col>
+                    <Grid.Col span={2} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}>
+                      <Text color="red" style={{ float: 'right' }}>
+                        {' Marks : '}
+                        {q.marks}
+                      </Text>
+                      <ActionIcon
+                        mr={5}
+                        onClick={() => openModal('edit', true, q)}
+                        variant="light"
+                      >
+                        <IconPencilPlus />
+                      </ActionIcon>
+                      <ActionIcon
+                        mr={5}
+                        onClick={() => { setOpenConfirm(true); setDeleteId(q.id); }}
+                        variant="light"
+                      >
+                        <IconTrash />
+                      </ActionIcon>
+                    </Grid.Col>
+                  </Grid>
+                  <Grid justify="space-around">
+                    <Grid.Col
+                      span={5}
+                      style={{
+                        background: '#fff', width: '50%', marginBottom: '0.5em', boxShadow: 'rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px',
+                      }}
+                    >
+                      <pre>{q.option1}</pre>
+                    </Grid.Col>
+                    <Grid.Col
+                      span={5}
+                      style={{
+                        background: '#fff', width: '50%', marginBottom: '0.5em', boxShadow: 'rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px',
+                      }}
+                    >
+                      <pre>{q.option2}</pre>
+                    </Grid.Col>
+                    <Grid.Col span={5} style={{ background: '#fff', boxShadow: 'rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px' }}>
+                      <pre>{q.option3}</pre>
+                    </Grid.Col>
+                    {q.option4 && (
+                    <Grid.Col span={5} style={{ background: '#fff', boxShadow: 'rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px' }}>
+                      <pre>{q.option4}</pre>
+                    </Grid.Col>
+                    )}
+                  </Grid>
+                </Card>
+              ))}
+            </Grid.Col>
           )}
         </Grid.Col>
       </Grid>
+      <Modal
+        opened={isOpenConfirm}
+        onClose={() => { setOpenConfirm(false); setDeleteId(null); }}
+        title="Do you want to delete this question?"
+        closeOnClickOutside={false}
+        overlayOpacity={0.1}
+      >
+        <Group spacing="lg" float="left">
+          <Button onClick={() => setOpenConfirm(false)}>Cancel</Button>
+          <Button color="red" onClick={handleDelete}>Delete</Button>
+        </Group>
+      </Modal>
     </Paper>
   );
 }

@@ -15,28 +15,20 @@ export default function AddQuestion(props) {
   const {
     opened, setOpened, modelKey, techType, questionType, editObject, refetchData,
   } = props;
+  const [correctoption, setCorrectoption] = useState(editObject?.correctOption || '');
+  const [correctoptionError, setCorrectoptionError] = useState(false);
+
   const form = useForm({
-    initialValues: modelKey === 'edit' ? {
+    initialValues: {
       question: editObject?.question,
       option1: editObject?.option1,
       option2: editObject?.option2,
       option3: editObject?.option3,
       option4: editObject?.option4,
-      correctoption: editObject?.correctOption,
-    } : {
-      question: '',
-      option1: '',
-      option2: '',
-      option3: '',
-      option4: '',
-      correctoption: '',
+      marks: editObject?.marks,
     },
     validate: {
-      question: (Value) => (Value.length > 0 ? null : 'Please Enter Question'),
-      option1: (Value) => (Value.length > 0 ? null : 'Please Enter Options 1'),
-      option2: (Value) => (Value.length > 0 ? null : 'Please Enter Options 2'),
-      option3: (Value) => (Value.length > 0 ? null : 'Please Enter Options 3'),
-      correctoption: (Value) => (Value.length > 0 ? null : 'Please Enter Currect Option'),
+      marks: (value) => (Number(value) > 0 && Number(value) <= 10 ? null : 'Please Enter valid marks (1 to 10)'),
     },
 
   });
@@ -67,10 +59,8 @@ export default function AddQuestion(props) {
 
   const updateMutation = useMutation(
     (payload) => baseApi.put('/questions', [{
+      ...editObject,
       ...payload,
-      id: editObject.id,
-      techTypeId: editObject.techTypeId,
-      questionType: editObject.questionType,
     }]),
     {
       onSuccess: () => {
@@ -90,6 +80,19 @@ export default function AddQuestion(props) {
     },
   );
 
+  const handleCorrectOptionChange = (e) => {
+    setCorrectoptionError(false);
+    setCorrectoption(e.target.name);
+  };
+
+  const handleSubmit = (values) => {
+    if (!correctoption || correctoption === 'option4') {
+      return setCorrectoptionError(true);
+    }
+    const payload = { ...values, marks: Number(values.marks), correctoption };
+    return (modelKey === 'add' ? addMutation : updateMutation).mutate(payload);
+  };
+
   const onCloseModal = () => {
     setOpened(false);
     form.reset();
@@ -104,7 +107,7 @@ export default function AddQuestion(props) {
       closeOnClickOutside={false}
     >
       <form
-        onSubmit={form.onSubmit(modelKey === 'add' ? addMutation.mutate : updateMutation.mutate)}
+        onSubmit={form.onSubmit(handleSubmit)}
       >
         <Grid>
           <Grid.Col
@@ -112,31 +115,46 @@ export default function AddQuestion(props) {
           >
             <Card>
               <Textarea
-                placeholder="Add Question"
+                placeholder="Question"
                 {...form.getInputProps('question')}
-                style={{}}
+                minRows={8}
+                required
               />
               <div style={{ width: '100%' }}>
                 <div style={{
                   display: 'flex', marginTop: '2%', justifyContent: 'space-between', width: '100%',
                 }}
                 >
-                  <div style={{ width: '48%' }}>
-                    <TextInput
+                  <div style={{
+                    width: '48%', display: 'flex', justifyContent: 'center', alignItems: 'center',
+                  }}
+                  >
+                    <Checkbox checked={correctoption === 'option1'} name="option1" onClick={handleCorrectOptionChange} mr={10} />
+                    <Textarea
                       radius="sm"
                       placeholder="Option 1"
                       size="sm"
                       {...form.getInputProps('option1')}
                       withAsterisk
+                      style={{ width: '100%' }}
+                      minRows={4}
+                      required
                     />
                   </div>
-                  <div style={{ width: '48%' }}>
-                    <TextInput
+                  <div style={{
+                    width: '48%', display: 'flex', justifyContent: 'center', alignItems: 'center',
+                  }}
+                  >
+                    <Checkbox checked={correctoption === 'option2'} name="option2" onClick={handleCorrectOptionChange} mr={10} />
+                    <Textarea
                       placeholder="Option 2"
                       radius="sm"
                       size="sm"
                       {...form.getInputProps('option2')}
                       withAsterisk
+                      style={{ width: '100%' }}
+                      minRows={4}
+                      required
                     />
                   </div>
                 </div>
@@ -144,21 +162,34 @@ export default function AddQuestion(props) {
                   display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: '2%',
                 }}
                 >
-                  <div style={{ width: '48%' }}>
-                    <TextInput
+                  <div style={{
+                    width: '48%', display: 'flex', justifyContent: 'center', alignItems: 'center',
+                  }}
+                  >
+                    <Checkbox checked={correctoption === 'option3'} name="option3" onClick={handleCorrectOptionChange} mr={10} />
+                    <Textarea
                       placeholder="Option 3"
                       radius="sm"
                       size="sm"
                       withAsterisk
                       {...form.getInputProps('option3')}
+                      style={{ width: '100%' }}
+                      minRows={4}
+                      required
                     />
                   </div>
-                  <div style={{ width: '48%' }}>
-                    <TextInput
+                  <div style={{
+                    width: '48%', display: 'flex', justifyContent: 'center', alignItems: 'center',
+                  }}
+                  >
+                    <Checkbox checked={correctoption === 'option4'} name="option4" onClick={handleCorrectOptionChange} mr={10} />
+                    <Textarea
                       placeholder="Option 4"
                       radius="sm"
                       size="sm"
                       {...form.getInputProps('option4')}
+                      style={{ width: '100%' }}
+                      minRows={4}
                     />
                   </div>
                 </div>
@@ -166,13 +197,14 @@ export default function AddQuestion(props) {
                   display: 'flex', justifyContent: 'center', marginTop: '2%', width: '100%',
                 }}
                 >
-                  <div style={{ width: '80%' }}>
+                  <div style={{ width: '20%' }}>
                     <TextInput
-                      placeholder="Correct Option"
+                      placeholder="marks"
                       radius="sm"
                       size="sm"
                       withAsterisk
-                      {...form.getInputProps('correctoption')}
+                      {...form.getInputProps('marks')}
+                      required
                     />
                   </div>
                 </div>
@@ -180,12 +212,16 @@ export default function AddQuestion(props) {
             </Card>
             <Grid.Col
               mt={10}
-              style={{ float: 'right' }}
+              style={{
+                float: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+              }}
             >
+              {correctoptionError && <Text color="red">Please select the correct option</Text>}
               <Button
                 mt="xl"
                 type="submit"
                 loading={addMutation.isLoading}
+                style={{ marginTop: 0 }}
               >
                 {modelKey === 'add' ? 'Save' : 'Update'}
               </Button>
