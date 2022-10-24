@@ -3,7 +3,7 @@
 /* eslint-disable import/no-unresolved */
 /* eslint-disable prefer-destructuring */
 import {
-  Avatar, Button, Card, Checkbox, LoadingOverlay, Tabs, Text, Title, Grid,
+  Avatar, Button, Card, Checkbox, Tabs, Text, Title, Grid,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import React, { useState, useMemo, useEffect } from 'react';
@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 
 import Logo from '../../assets/Online-Assessment-Tool-kaaylabs.svg';
 import baseApi from '../../shared/api';
+import CustomLoadingOverlay from '../../shared/components/CustomLoadingOverlay';
 import { queryConstants, QUESTIONS_CACHE, questionTypes } from '../../shared/constant-values';
 import {
   customLog,
@@ -188,7 +189,7 @@ function Client() {
     || isEmpty(questionStatus)) && !(isFetched && !session);
 
   if (loadingState) {
-    return <LoadingOverlay visible overlayBlur={2} loaderProps={{ color: 'violet', size: 'xl', variant: 'dots' }} />;
+    return <CustomLoadingOverlay />;
   }
 
   if (isErrorTechTypes || !techTypes) {

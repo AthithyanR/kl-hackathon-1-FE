@@ -22,10 +22,10 @@ const option = ({
         borderRadius: 4,
       })}
     >
-      <Box mr={10}>
-        <img src={image} width="20" alt={label} />
+      <Box mr={10} className="d-flex-all">
+        {image && <img src={image} width="20" alt={label} />}
       </Box>
-      <Box sx={{ lineHeight: 1, fontSize: 12 }}>{label}</Box>
+      <Box sx={{ lineHeight: 1, fontSize: 12 }} mr={10}>{label}</Box>
       <CloseButton
         onMouseDown={onRemove}
         variant="transparent"
@@ -42,8 +42,7 @@ const Item = forwardRef(({
 }, ref) => (
   <div ref={ref} {...others}>
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      <Box mr={10} />
-      <img src={image} width="20" alt={label} />
+      {image && <img src={image} width="20" style={{ marginRight: 10 }} alt={label} />}
       <div>{label}</div>
     </Box>
   </div>

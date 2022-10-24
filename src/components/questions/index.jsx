@@ -24,6 +24,7 @@ import AddQuestion from './upsert';
 import { queryConstants, questionTypes, dbMessageSnip } from '../../shared/constant-values';
 import baseApi from '../../shared/api';
 import './upsert/upsert.scss';
+import CustomLoadingOverlay from '../../shared/components/CustomLoadingOverlay';
 
 const option = ({
   label, image, onRemove, classNames, ...others
@@ -163,7 +164,7 @@ export default function Questions() {
   };
 
   if (isLoadingTechTypes) {
-    return <LoadingOverlay visible overlayBlur={2} loaderProps={{ color: 'violet', size: 'xl', variant: 'dots' }} />;
+    return <CustomLoadingOverlay />;
   }
 
   if (isErrorTechTypes) {

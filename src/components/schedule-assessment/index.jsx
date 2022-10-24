@@ -14,8 +14,7 @@ import tableConfig from '../../shared/meta-data/table/assessment';
 
 export default function Assessment() {
   const [opened, setOpened] = useState(false);
-  const [editOption, setEditOption] = useState({});
-  const [key, setKey] = useState('Add');
+  const [editOption, setEditOption] = useState(null);
   const {
     data: assessmentSessionQuery, isLoading, isError, refetch,
   } = useQuery(
@@ -25,18 +24,19 @@ export default function Assessment() {
 
   const assessmentSessions = assessmentSessionQuery?.data || [];
 
-  const showModal = (visible, option) => {
-    if (option === 'Add') {
-      setEditOption({});
-    }
-    setKey(option);
-    setOpened(visible);
-    refetch();
-  };
-
   const handleEdit = useCallback((obj) => {
     setEditOption(obj);
-    showModal(true, 'Edit');
+    setOpened(true);
+  }, []);
+
+  const handleAdd = useCallback(() => {
+    setOpened(true);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setEditOption(null);
+    setOpened(false);
+    refetch();
   }, []);
 
   const handleDelete = useCallback((obj) => {
@@ -81,7 +81,7 @@ export default function Assessment() {
         </Grid.Col>
         <Grid.Col span={1}>
           <ActionIcon
-            onClick={() => showModal(true, 'Add')}
+            onClick={handleAdd}
             variant="filled"
             sx={{ backgroundColor: '#211c57', marginLeft: 'auto' }}
           >
@@ -93,10 +93,8 @@ export default function Assessment() {
         <TableComponent data={assessmentSessions} config={tableConfig} handlers={handlers} />
         {opened && (
         <UpsertAssessment
-          option={key}
-          opened={opened}
           editOption={editOption}
-          setOpened={showModal}
+          handleClose={handleClose}
         />
         )}
       </Grid>

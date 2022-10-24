@@ -15,6 +15,7 @@ import NotFound from './components/not-found';
 
 import './styles/index.scss';
 import { TOKEN_NAME } from './shared/constant-values';
+import CustomLoadingOverlay from './shared/components/CustomLoadingOverlay';
 
 const Login = React.lazy(() => import('./components/login'));
 const Main = React.lazy(() => import('./components/main'));
@@ -56,7 +57,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <MantineProvider withNormalizeCSS withGlobalStyles>
         <NotificationsProvider>
-          <Suspense fallback={<LoadingOverlay visible overlayBlur={2} loaderProps={{ color: 'violet', size: 'xl', variant: 'dots' }} />}>
+          <Suspense fallback={<CustomLoadingOverlay />}>
             <BrowserRouter>
               <Routes>
                 <Route path="/assessment" element={<Assessment />} />

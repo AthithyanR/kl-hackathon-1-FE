@@ -1,9 +1,9 @@
+/* eslint-disable no-restricted-syntax */
 /* eslint-disable no-nested-ternary */
-/* eslint-disable no-use-before-define */
 /* eslint-disable max-len */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Title, Grid, Modal, LoadingOverlay, Group, Button, Card, Text, Checkbox, Input, NumberInput,
+  Title, Grid, Modal, Group, Button, Card, Text, Checkbox, Input, NumberInput,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { IconAt } from '@tabler/icons';
@@ -12,102 +12,99 @@ import { showNotification } from '@mantine/notifications';
 import { queryConstants, questionTypes } from '../../../shared/constant-values';
 import baseApi from '../../../shared/api';
 import './upsert.scss';
-import { isEmpty } from '../../../shared/utils';
 import SelectTechType from './select-tech-type';
+import CustomLoadingOverlay from '../../../shared/components/CustomLoadingOverlay';
+import { checkEmail } from './helper';
 
 const message = {
   candidateEmails: 'Please Enter Valid Email ID',
-  randomCount: 'Please Enter Random Count or Select Your Question',
+  questionState: 'Please Enter Random Count or Select Your Question',
   timeAllowedInMins: 'Please Enter Valid Duration',
 };
 
-const onChangeObject = (editOption) => {
-  const {
-    questionData, timeAllowedInMins, candidateEmail,
-  } = editOption;
-  const data = JSON.parse(questionData);
-  const quizData = {};
-  if (!isEmpty(data)) {
-    Object.entries(data).forEach(([techTypeKey, techTypeValue]) => {
-      if (!quizData[techTypeKey]) {
-        quizData[techTypeKey] = {};
-        Object.entries(techTypeValue).forEach(([quizTypeKey, quizTypeValue]) => {
-          if (!quizData[techTypeKey][quizTypeKey]) {
-            quizData[techTypeKey][quizTypeKey] = {};
-            quizData[techTypeKey][quizTypeKey] = quizTypeValue.length ? quizTypeValue.map((i) => i[0]) : quizTypeValue;
-          }
-        });
-      }
-    });
-  }
-  const techTypeKeys = Object.keys(quizData);
-  return {
-    quizData, timeAllowedInMins, candidateEmail, techTypeKeys,
-  };
-};
-
 export default function UpsertAssessment(props) {
-  const {
-    option, opened, setOpened, editOption,
-  } = props;
-  let quizInfo = {};
-  let initParams = { randomCount: null, candidateEmails: [], timeAllowedInMins: 60 };
-  const initSelectOption = { questionType: questionTypes[0] };
-  let initTechType = [];
-  if (!isEmpty(editOption)) {
-    const {
-      quizData, timeAllowedInMins, candidateEmail, techTypeKeys,
-    } = onChangeObject(editOption);
-    quizInfo = quizData;
-    initParams = { timeAllowedInMins, candidateEmail };
-    initTechType = techTypeKeys;
-    const [firstValue] = initTechType;
-    initSelectOption.techType = firstValue;
-  }
-  const [selectedTechGroup, setSelectedTechGroup] = useState([]);
-  const [selectedTechIds, setSelectedTechIds] = useState(initTechType);
+  const { editOption, handleClose } = props;
+  const [selectedTechIds, setSelectedTechIds] = useState([]);
   const [questions, setQuestions] = useState([]);
-  const [selectOption, setSelectOption] = useState(initSelectOption);
-  const [questionSelection, setQuesionSelection] = useState(quizInfo);
-  const [assessmentParams, setAssessmentParams] = useState(initParams);
-  const [emailError, setEmailError] = useState(false);
-  const [isErrorMessage, setIsErrorMessage] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(false);
+  const [selectOption, setSelectOption] = useState({ questionType: questionTypes[0] });
+  const [questionState, setQuestionState] = useState(new Map());
+  const [assessmentParams, setAssessmentParams] = useState({
+    candidateEmails: '',
+    timeAllowedInMins: 60,
+  });
+  const [errors, setErrors] = useState(new Map());
 
-  const { questionType, techType } = selectOption;
+  const { techType, questionType } = selectOption;
 
-  const { data: techTypesQuery, isLoading, isError } = useQuery(
-    [queryConstants.techTypes],
-    () => baseApi.get('/techTypes'),
+  const {
+    data: techTypesQuery,
+    isLoading,
+    isError,
+  } = useQuery([queryConstants.techTypes], () => baseApi.get('/techTypes'));
+
+  const techTypes = useMemo(
+    () => techTypesQuery?.data.map(({ id, imgUrl, name }) => ({
+      id,
+      value: id,
+      label: name,
+      image: imgUrl,
+    })) || [],
+    [techTypesQuery],
   );
 
-  const techTypes = techTypesQuery?.data.map(({ id, imgUrl, name }) => ({
-    id,
-    value: id,
-    label: name,
-    image: imgUrl,
-  })) || [];
+  const selectedTechTypes = useMemo(
+    () => techTypes.filter(({ id }) => selectedTechIds.includes(id)),
+    [techType, selectedTechIds],
+  );
+
+  const currentConfigValue = useMemo(
+    () => questionState.get(techType)?.get(questionType) || new Set(),
+    [questionState, selectOption],
+  );
+
+  const isCurrentConfigRandomized = typeof currentConfigValue === 'number';
+
+  const handleEditLoad = async () => {
+    const { id, candidateEmail, timeAllowedInMins } = editOption;
+    const { data: editMeta } = await baseApi.get(`/assessmentSession/${id}`);
+    const techTypeIds = new Set();
+    const newQuestionState = new Map();
+    let ptr;
+    for (const obj of editMeta) {
+      techTypeIds.add(obj.techTypeId);
+
+      ptr = newQuestionState;
+      ptr.set(obj.techTypeId, ptr.get(obj.techTypeId) || new Map());
+      ptr = ptr.get(obj.techTypeId);
+      ptr.set(obj.questionType, ptr.get(obj.questionType) || new Set());
+      ptr = ptr.get(obj.questionType);
+      ptr.add(obj.questionId);
+    }
+    setQuestionState(newQuestionState);
+    setAssessmentParams({
+      candidateEmails: candidateEmail,
+      timeAllowedInMins,
+    });
+    setSelectedTechIds([...techTypeIds]);
+    setSelectOption((prev) => ({
+      ...prev,
+      techType: editMeta[0].techTypeId,
+    }));
+  };
 
   useEffect(() => {
-    if (selectOption.techType) {
-      fetchData();
-    }
-    if (!isEmpty(editOption)) {
-      const filterIds = techTypes.filter(({ id }) => selectedTechIds.includes(id));
-      setSelectedTechGroup(filterIds);
-    }
-  }, [selectOption]);
+    if (editOption) handleEditLoad();
+  }, [editOption]);
 
   const fetchData = async () => {
     try {
-      const responseData = await baseApi.get('/questions', {
+      const response = await baseApi.get('/questions', {
         params: {
           techTypeId: techType,
           questionType,
         },
       });
-      const { data: quiz } = responseData;
-      setQuestions(quiz);
+      setQuestions(response.data);
     } catch (err) {
       showNotification({
         title: '',
@@ -116,29 +113,54 @@ export default function UpsertAssessment(props) {
     }
   };
 
-  const onChange = (ids) => {
-    const validTechTypes = ids.length < selectedTechGroup.length
-      ? selectedTechGroup.filter(({ id }) => ids.includes(id))
-      : [...selectedTechGroup, techTypes.find(({ id }) => id === ids.at(-1))];
+  useEffect(() => {
+    if (techType) {
+      fetchData();
+    }
+  }, [selectOption]);
 
-    if (selectOption.techType) {
-      if (!ids.includes(selectOption.techType)) {
-        const currentIdx = selectedTechGroup.findIndex((obj) => obj.id === selectOption.techType);
+  const checkError = () => {
+    const errorMap = new Map();
+    const [, emailError] = checkEmail(assessmentParams.candidateEmails);
+    let hasError = false;
+    [
+      ['candidateEmails', emailError],
+      ['timeAllowedInMins', !assessmentParams.timeAllowedInMins],
+      ['questionState', !questionState.size],
+    ].forEach(([key, value]) => {
+      if (!hasError && value) {
+        hasError = value;
+      }
+      errorMap.set(key, value);
+    });
+    setErrors(errorMap);
+    return hasError;
+  };
+
+  useEffect(() => {
+    if (errors.size) checkError();
+  }, [assessmentParams, questionState]);
+
+  const onTechTypeChange = (ids) => {
+    if (techType) {
+      if (!ids.includes(techType)) {
+        const currentIdx = selectedTechIds.findIndex((id) => id === techType);
         const validNewIdx = currentIdx - 1 >= 0 ? currentIdx - 1 : currentIdx;
-        setSelectOption({ ...selectOption, techType: validTechTypes[validNewIdx]?.id });
+        setSelectOption({ ...selectOption, techType: ids[validNewIdx] });
       }
     } else {
-      setSelectOption({ ...selectOption, techType: validTechTypes[0]?.id });
+      setSelectOption({ ...selectOption, techType: ids[0] });
     }
 
-    setSelectedTechGroup(validTechTypes);
-
-    Object.keys(questionSelection).forEach((k) => !ids.includes(k) && delete questionSelection[k]);
-    setQuesionSelection(questionSelection);
+    for (const key of questionState.keys()) {
+      if (!ids.includes(key)) {
+        questionState.delete(key);
+      }
+    }
+    setQuestionState(new Map(questionState));
     setSelectedTechIds(ids);
-    if (!validTechTypes.length) {
+    if (!ids.length) {
       setQuestions([]);
-      setQuesionSelection({});
     }
   };
 
@@ -147,205 +169,147 @@ export default function UpsertAssessment(props) {
     setSelectOption({ ...selectOption, [key]: value });
   };
 
-  const onCloseModal = () => {
-    setOpened(false);
-    setSelectOption({ questionType: questionTypes[0] });
-    setSelectedTechGroup([]);
-    setQuestions([]);
-    setAssessmentParams({ candidateEmails: [], randomCount: null, timeAllowedInMins: 60 });
-    setQuesionSelection({});
-    setSelectedTechIds([]);
-  };
-
-  const handleQuestionState = (e) => () => {
-    if (!questionSelection[selectOption.techType]) {
-      questionSelection[selectOption.techType] = {};
+  const handleQuestionPicked = (pickedQuestionId) => {
+    if (!questionState.has(techType)) {
+      questionState.set(techType, new Map());
     }
-    if (!questionSelection[selectOption.techType][selectOption.questionType]) {
-      questionSelection[selectOption.techType][selectOption.questionType] = [];
+    const queTypeState = questionState.get(techType);
+    if (!queTypeState.has(questionType) || typeof queTypeState.get(questionType) === 'number') {
+      queTypeState.set(questionType, new Set());
     }
-
-    if (!questionSelection[selectOption.techType][selectOption.questionType].includes(e)) {
-      questionSelection[selectOption.techType][selectOption.questionType].push(e);
-    } else if (questionSelection[selectOption.techType][selectOption.questionType].length === 1) {
-      delete questionSelection[selectOption.techType][selectOption.questionType];
-      if (isEmpty(questionSelection[selectOption.techType])) {
-        delete questionSelection[selectOption.techType];
-      }
+    const queIdState = queTypeState.get(questionType);
+    if (queIdState.has(pickedQuestionId)) {
+      queIdState.delete(pickedQuestionId);
     } else {
-      questionSelection[selectOption.techType][selectOption.questionType] = questionSelection[selectOption.techType][selectOption.questionType]
-        .filter((id) => id !== e);
+      queIdState.add(pickedQuestionId);
     }
-    setQuesionSelection({ ...questionSelection });
-    setAssessmentParams((prev) => ({
-      ...prev,
-      randomCount: isEmpty(questionSelection) ? null : questionSelection,
-    }));
-  };
 
-  useEffect(() => {
-    if (isErrorMessage) {
-      const { isErrorMesg, currentErrorMessage } = checkError(assessmentParams);
-      setIsErrorMessage(isErrorMesg);
-      setErrorMessage(currentErrorMessage);
+    // if id set is empty, remove questiontype
+    if (!queIdState.size) {
+      queTypeState.delete(questionType);
     }
-  }, [assessmentParams]);
-
-  const checkError = (params) => {
-    const error = [];
-    Object.entries(params).forEach(([key, value]) => {
-      if ([null, '', {}].includes(value)) {
-        error.push(key);
-      } else if (key === 'candidateEmails' && value.length === 0) {
-        error.push(key);
-      }
-    });
-    const currentError = error[0];
-    const isErrorMesg = error.length >= 1;
-    const currentErrorMessage = message[currentError];
-    return { isErrorMesg, currentErrorMessage };
+    // if questionType is empty, remove techtype from map
+    if (!queTypeState.size) {
+      questionState.delete(techType);
+    }
+    setQuestionState(new Map(questionState));
   };
 
   const handleRandomization = (e) => {
-    if (!questionSelection[selectOption.techType]) {
-      questionSelection[selectOption.techType] = {};
+    if (!questionState.has(techType)) {
+      questionState.set(techType, new Map());
     }
-    if (!e) {
-      questionSelection[selectOption.techType][selectOption.questionType] = [];
+    const queTypeState = questionState.get(techType);
+    if (e) {
+      queTypeState.set(questionType, Number(e));
     } else {
-      questionSelection[selectOption.techType][selectOption.questionType] = Number(e);
+      queTypeState.delete(questionType);
     }
-    setAssessmentParams((prev) => ({ ...prev, randomCount: e }));
+
+    // if questionType is empty, remove techtype from map
+    if (!queTypeState.size) {
+      questionState.delete(techType);
+    }
+    setQuestionState(new Map(questionState));
   };
 
-  const doSubmit = async () => {
-    const { timeAllowedInMins, emails } = assessmentParams;
-    const quizData = {};
-    try {
-      if (!isEmpty(questionSelection)) {
-        Object.entries(questionSelection).forEach(([techTypeKey, techTypeValue]) => {
-          if (!quizData[techTypeKey]) {
-            quizData[techTypeKey] = {};
-            Object.entries(techTypeValue).forEach(([quizTypeKey, quizTypeValue]) => {
-              if (!quizData[techTypeKey][quizTypeKey]) {
-                quizData[techTypeKey][quizTypeKey] = {};
-                quizData[techTypeKey][quizTypeKey] = Array.isArray(quizTypeValue) ? quizTypeValue.map((i) => ([`${i}`, 'false'])) : quizTypeValue;
-              }
-            });
-          }
+  const handleAssessmentParams = (name, value) => {
+    setAssessmentParams((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const getPayload = () => {
+    const questionIds = [];
+    const randomQuestions = [];
+    for (const techTypeId of questionState.keys()) {
+      const techTypeMap = questionState.get(techTypeId);
+      for (const questionTypeName of techTypeMap.keys()) {
+        const questionData = techTypeMap.get(questionTypeName);
+        if (typeof questionData === 'number') {
+          randomQuestions.push({
+            techTypeId,
+            questionType: questionTypeName,
+            count: questionData,
+          });
+        } else {
+          questionIds.push(...questionData);
+        }
+      }
+    }
+    return [questionIds, randomQuestions];
+  };
+
+  const handleSubmit = async () => {
+    const { timeAllowedInMins, candidateEmails } = assessmentParams;
+    const [questionIds, randomQuestions] = getPayload();
+    const payload = { timeAllowedInMins, questionIds, randomQuestions };
+    if (editOption) {
+      try {
+        await baseApi.put('/assessmentSession', { ...editOption, ...payload });
+        showNotification({
+          title: '',
+          message: 'Updated Successfully',
+        });
+        handleClose(1);
+      } catch (_err) {
+        showNotification({
+          title: '',
+          message: 'Something went wrong',
         });
       }
-      if (option === 'Add') {
-        await baseApi.post('/assessmentSession', {
-          candidateEmails: emails,
-          timeAllowedInMins,
-          questionData: JSON.stringify(quizData),
-        }).then(() => {
-          setOpened(false);
-          showNotification({
-            title: '',
-            message: 'Add Successfully',
-          });
-        }).catch(() => {
-          showNotification({
-            title: '',
-            message: 'Something went to wrong',
-          });
+    } else {
+      const [parsedEmails] = checkEmail(candidateEmails);
+      try {
+        await baseApi.post('/assessmentSession', { candidateEmails: parsedEmails, ...payload });
+        showNotification({
+          title: '',
+          message: 'Added Successfully',
         });
-      } else {
-        const {
-          id, candidateEmail, score, possibleScore, scoreOutOf100Percent,
-          isEmailSent, startTime, endTime, questionsCount, candidateEmails,
-        } = editOption;
-        await baseApi.put('/assessmentSession', {
-          id,
-          candidateEmail,
-          score,
-          possibleScore,
-          scoreOutOf100Percent,
-          isEmailSent,
-          startTime,
-          endTime,
-          questionsCount,
-          candidateEmails,
-          timeAllowedInMins,
-          questionData: JSON.stringify(quizData),
-        }).then(() => {
-          setOpened(false);
-          showNotification({
-            title: '',
-            message: 'Update Successfully',
-          });
-        }).catch(() => {
-          showNotification({
-            title: '',
-            message: 'Something went to wrong',
-          });
+        handleClose(1);
+      } catch (_err) {
+        showNotification({
+          title: '',
+          message: 'Something went wrong',
         });
       }
-    } catch (err) {
-      showNotification({
-        title: '',
-        message: 'Something went to wrong',
-      });
     }
   };
 
-  const handleSubmit = () => {
-    const { isErrorMesg, currentErrorMessage } = checkError(assessmentParams);
-    if (!isErrorMesg) {
-      if (!emailError) {
-        doSubmit();
-      }
-    } else {
-      setIsErrorMessage(isErrorMesg);
-      setErrorMessage(currentErrorMessage);
+  const onSubmit = () => {
+    if (!checkError()) {
+      handleSubmit();
     }
   };
 
   if (isLoading) {
-    return <LoadingOverlay visible overlayBlur={2} loaderProps={{ color: 'violet', size: 'xl', variant: 'dots' }} />;
+    return <CustomLoadingOverlay />;
   }
 
   if (isError) {
     return <Title>Error occurred</Title>;
   }
 
-  const checkEmail = (e) => {
-    const { value } = e.target;
-    // eslint-disable-next-line no-useless-escape
-    const regEx = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
-    const result = value.replace(/\s/g, '').split(/,|;/);
-    const emails = [];
-    result.forEach((i) => {
-      const em = i.trim();
-      if (!regEx.test(em) || em.length === 0) {
-        setEmailError(true);
-      } else {
-        emails.push(i);
-        setEmailError(false);
-      }
-    });
-    setAssessmentParams((prev) => ({ ...prev, candidateEmails: value, emails }));
-  };
-
   return (
     <Modal
-      title={`${option} Assessment Secession`}
-      opened={opened}
+      title={`${editOption ? 'Edit' : 'Add'} Assessment Session`}
+      opened
       size="80%"
       closeOnClickOutside={false}
-      onClose={() => onCloseModal()}
+      onClose={handleClose}
     >
       <Grid className="schedule-assessment-model-content">
-        <SelectTechType techTypes={techTypes} selectedTechIds={selectedTechIds} techType onChange={onChange} />
-        {!!selectedTechGroup.length && (
+        <SelectTechType
+          techTypes={techTypes}
+          selectedTechIds={selectedTechIds}
+          techType
+          onChange={onTechTypeChange}
+        />
+        {!!selectedTechTypes.length && (
           <Grid.Col
             mt={10}
             className="card"
           >
             <Group spacing="lg">
-              {selectedTechGroup.map(({ label, id }) => (
+              {selectedTechTypes.map(({ label, id }) => (
                 <Button
                   key={id}
                   className="option-btn"
@@ -386,7 +350,7 @@ export default function UpsertAssessment(props) {
               span={4}
             >
               <NumberInput
-                value={questionSelection[selectOption.techType]?.[selectOption.questionType]}
+                value={isCurrentConfigRandomized ? currentConfigValue : undefined}
                 placeholder="Choose Random Count"
                 radius="md"
                 onChange={handleRandomization}
@@ -397,7 +361,7 @@ export default function UpsertAssessment(props) {
                     <Text>{questions.length}</Text>
                   </div>
                 )}
-                disabled={(questionSelection[selectOption.techType]?.[selectOption.questionType] || []).length}
+                disabled={!isCurrentConfigRandomized && currentConfigValue.size}
               />
             </Grid.Col>
             <Grid.Col
@@ -410,25 +374,19 @@ export default function UpsertAssessment(props) {
                   mb={10}
                   p={20}
                   key={q.id}
-                  onClick={handleQuestionState(q.id)}
-                  style={
-                    (typeof questionSelection[selectOption.techType]?.[selectOption.questionType] === 'number')
-                      ? { pointerEvents: 'none' }
-                      : {}
-                  }
+                  onClick={() => handleQuestionPicked(q.id)}
+                  style={isCurrentConfigRandomized ? { pointerEvents: 'none' } : {}}
                 >
                   <Grid>
                     <Grid.Col
                       span={11}
                     >
                       <Checkbox
-                        checked={
-                      Array.isArray(questionSelection[selectOption.techType]?.[selectOption.questionType])
-                      && questionSelection[selectOption.techType][selectOption.questionType].includes(q.id)
-                  }
+                        checked={!isCurrentConfigRandomized && currentConfigValue.has(q.id)}
+                        disabled={isCurrentConfigRandomized}
                         readOnly
                         label={(
-                          <Text weight={500} onClick={handleQuestionState(q.id)} size="md">
+                          <Text weight={500} onClick={() => handleQuestionPicked(q.id)} size="md">
                             <pre>
                               {q.question}
                             </pre>
@@ -453,12 +411,15 @@ export default function UpsertAssessment(props) {
                 icon={<IconAt />}
                 placeholder="Enter The Email Id"
                 radius="md"
-                value={assessmentParams.candidateEmail}
-                disabled={option === 'Edit'}
-                onChange={(e) => setAssessmentParams((prev) => ({ ...prev, emailId: e.target.value }))}
-                onBlur={(e) => checkEmail(e)}
-                invalid={emailError}
+                value={assessmentParams.candidateEmails}
+                disabled={editOption}
+                onChange={(e) => handleAssessmentParams('candidateEmails', e.target.value)}
+                required
+                helper
               />
+              {
+                errors.get('candidateEmails') && <Text color="red">{message.candidateEmails}</Text>
+              }
             </Grid.Col>
             <Grid.Col
               mt={10}
@@ -469,22 +430,36 @@ export default function UpsertAssessment(props) {
                 radius="md"
                 value={assessmentParams.timeAllowedInMins}
                 hideControls
-                onChange={(e) => setAssessmentParams((prev) => ({ ...prev, timeAllowedInMins: e }))}
+                onChange={(e) => handleAssessmentParams('timeAllowedInMins', e)}
+                required
+                he
               />
+              {
+                errors.get('timeAllowedInMins') && <Text color="red">{message.timeAllowedInMins}</Text>
+              }
             </Grid.Col>
             <Grid.Col
               mt={10}
               span={11}
             >
-              <Text size="md" style={{ float: 'right' }} mt={10} color="red">{isErrorMessage ? errorMessage : emailError ? message.candidateEmails : ''}</Text>
+              <Text
+                size="md"
+                style={{ float: 'right' }}
+                mt={10}
+                color="red"
+              >
+                {
+                errors.get('questionState') && <Text color="red">{message.questionState}</Text>
+              }
+              </Text>
             </Grid.Col>
             <Grid.Col
               mt={10}
               span={1}
               style={{ float: 'right' }}
             >
-              <Button size="md" onClick={() => handleSubmit()}>
-                {option === 'Add' ? 'Save' : 'Update'}
+              <Button type="submit" size="md" onClick={onSubmit}>
+                {editOption ? 'Update' : 'Save'}
               </Button>
             </Grid.Col>
           </>

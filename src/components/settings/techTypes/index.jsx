@@ -19,6 +19,7 @@ import { useForm } from '@mantine/form';
 import { dbMessageSnip, queryConstants } from '../../../shared/constant-values';
 import baseApi from '../../../shared/api';
 import './style.scss';
+import CustomLoadingOverlay from '../../../shared/components/CustomLoadingOverlay';
 
 function TechType({ techType, handleDelete, handleEdit }) {
   return (
@@ -130,7 +131,7 @@ function TechTypes() {
   });
 
   if (isLoading) {
-    return <LoadingOverlay visible overlayBlur={2} loaderProps={{ color: 'violet', size: 'xl', variant: 'dots' }} />;
+    return <CustomLoadingOverlay />;
   }
 
   if (isError) {
@@ -214,7 +215,7 @@ function TechTypes() {
             type="submit"
             loading={addMutation.isLoading}
           >
-            Add
+            {editId ? 'Update' : 'Add'}
           </Button>
         </form>
       </Modal>
